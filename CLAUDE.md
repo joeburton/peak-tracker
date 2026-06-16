@@ -66,7 +66,7 @@ The application is a **generic peak-tracking platform**. It must support any UK 
 
 ### Frontend
 
-- **Next.js 15** (App Router, Server Components by default)
+- **Next.js 16** (App Router, Server Components by default)
 - **React 19**
 - **TypeScript** (strict mode)
 - **Tailwind CSS**
@@ -112,6 +112,7 @@ The application is a **generic peak-tracking platform**. It must support any UK 
 
 > **Note on Next.js version:** The original spec referenced Next.js 16 which does not exist.
 > This spec uses Next.js 15 (current stable). Update this note if 16 ships before project start.
+> Check if version 16 is available and use it if so.
 
 ---
 
