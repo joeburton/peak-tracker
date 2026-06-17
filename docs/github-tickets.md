@@ -1,7 +1,6 @@
 # GitHub Tickets — Peak Tracker UK
 
-> Status: Draft — awaiting approval before GitHub issues are created.
-> GitHub Issue URLs will be added after issues are created.
+> Status: Active — GitHub issues created. URLs populated below.
 
 ---
 
@@ -13,18 +12,23 @@
 
 **GitHub Issue:** [#1](https://github.com/joeburton/peak-tracker/issues/1)
 **Milestone:** Milestone 1 — Foundation
-**Branch:** `feature/<issue-number>-init-nextjs-project`
+**Branch:** `feature/1-init-nextjs-project`
 
 **Description:**
-Bootstrap the Next.js 16 project using the App Router. TypeScript must be configured in strict mode with `noImplicitAny`, `strictNullChecks`, and `noUncheckedIndexedAccess` enabled. Turbopack is the default bundler in Next.js 16 — no additional configuration required. Establish the base directory structure as defined in CLAUDE.md.
+Bootstrap the Next.js 16 project using `create-next-app@16` with the App Router, TypeScript, Tailwind CSS, ESLint, and the `src/` directory layout. TypeScript must be configured in strict mode with `noImplicitAny`, `strictNullChecks`, and `noUncheckedIndexedAccess` enabled. Turbopack is the default bundler in Next.js 16 — no additional configuration required. Establish the base directory structure as defined in CLAUDE.md. Add Vitest and Playwright as devDependencies.
+
+> **Implementation note:** `create-next-app@16` was used as the scaffold base rather than manual config. This installed Tailwind CSS v4 (with `@tailwindcss/postcss`) — see ticket #2.
 
 **Acceptance Criteria:**
 
-- [ ] Next.js 16 project initialised with App Router
-- [ ] TypeScript strict mode enabled (`strict: true`, zero `any`)
-- [ ] Base directory structure in place (`src/app`, `src/components`, `src/features`, `src/db`, `src/lib`, `src/lib/constants`)
-- [ ] `proxy.ts` placeholder in place (Clerk integration in Milestone 2)
-- [ ] `npm run build` passes
+- [x] Next.js 16 project initialised with App Router via `create-next-app@16`
+- [x] TypeScript strict mode enabled (`strict: true`, `noImplicitAny`, `strictNullChecks`, `noUncheckedIndexedAccess`)
+- [x] Base directory structure in place (`src/app`, `src/components`, `src/features`, `src/db`, `src/lib`, `src/lib/constants`)
+- [x] `proxy.ts` placeholder in place (Clerk integration in Milestone 2)
+- [x] `npm run build` passes
+- [x] `npm run typecheck` passes
+- [x] `.env.example` committed with all required keys
+- [x] `src/lib/queryKeys.ts` created (centralised TanStack Query key registry)
 
 **Dependencies:**
 None
@@ -41,15 +45,17 @@ None
 
 **GitHub Issue:** [#2](https://github.com/joeburton/peak-tracker/issues/2)
 **Milestone:** Milestone 1 — Foundation
-**Branch:** `feature/<issue-number>-tailwind-shadcn`
+**Branch:** `feature/2-tailwind-shadcn`
 
 **Description:**
-Install and configure Tailwind CSS. Initialise shadcn/ui and install the core components required by the application (Button, Input, Select, Badge, Card, Separator). Verify components render correctly and are accessible.
+Tailwind CSS v4 is already installed by `create-next-app@16` (via `@tailwindcss/postcss`). This ticket covers initialising shadcn/ui and installing the core components required by the application (Button, Input, Select, Badge, Card, Separator). Use `npx shadcn@latest init` to initialise. Verify components render correctly and are accessible.
+
+> **Implementation note:** Tailwind v4 uses `@import "tailwindcss"` in `globals.css` instead of the v3 `@tailwind base/components/utilities` directives. shadcn/ui must be confirmed compatible with Tailwind v4 before initialising — check shadcn docs for v4 support.
 
 **Acceptance Criteria:**
 
-- [ ] Tailwind CSS installed and configured
-- [ ] shadcn/ui initialised
+- [ ] Tailwind CSS v4 confirmed working (already installed — verify with a utility class)
+- [ ] shadcn/ui initialised via `npx shadcn@latest init`
 - [ ] Core components installed: Button, Input, Select, Badge, Card, Separator
 - [ ] A basic smoke-test page confirms Tailwind and shadcn/ui render correctly
 - [ ] `npm run build` passes
