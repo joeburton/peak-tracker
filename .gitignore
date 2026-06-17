@@ -42,3 +42,6 @@ yarn-error.log*
 next-env.d.ts
 
 notes.txt
+
+# Claude Code local settings (may contain secrets)
+.claude/settings.local.json
