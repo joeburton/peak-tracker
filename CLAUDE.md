@@ -16,6 +16,7 @@ DO NOT access MongoDB or Dexie directly from components or route handlers.
 DO NOT hardcode Wainwright-specific logic anywhere in the application.
 DO NOT create placeholder or stub implementations.
 DO NOT assume a single peak list. Design every feature generically.
+DO NOT use middleware.ts — Next.js 16 uses proxy.ts instead.
 ```
 
 ---
@@ -66,7 +67,7 @@ The application is a **generic peak-tracking platform**. It must support any UK 
 
 ### Frontend
 
-- **Next.js 15** (App Router, Server Components by default)
+- **Next.js 16** (current stable: 16.2.x, App Router, Server Components by default)
 - **React 19**
 - **TypeScript** (strict mode)
 - **Tailwind CSS**
@@ -74,7 +75,8 @@ The application is a **generic peak-tracking platform**. It must support any UK 
 
 ### Authentication
 
-- **Clerk** — social login (Google, Apple, GitHub), pre-built UI, Next.js 15 App Router middleware
+- **Clerk** — social login (Google, Apple, GitHub), pre-built UI components
+- Clerk must be configured using **`proxy.ts`** — not `middleware.ts` (removed in Next.js 16)
 - Free tier: 10,000 monthly active users
 - Clerk `userId` flows directly into the progress repository and MongoDB progress collection
 
@@ -110,8 +112,20 @@ The application is a **generic peak-tracking platform**. It must support any UK 
 - **next-pwa**
 - **Service Worker**
 
-> **Note on Next.js version:** The original spec referenced Next.js 16 which does not exist.
-> This spec uses Next.js 15 (current stable). Update this note if 16 ships before project start.
+---
+
+## NEXT.JS 16 — KEY CHANGES FROM 15
+
+These are breaking or significant changes that affect implementation decisions.
+
+| Change                  | Detail                                                                          |
+| ----------------------- | ------------------------------------------------------------------------------- |
+| `middleware.ts` removed | Replaced by `proxy.ts` — all routing and auth middleware must use this          |
+| Cache Components        | New explicit caching model using `use cache` directive and PPR                  |
+| Turbopack               | Now the default bundler — no configuration required                             |
+| `proxy.ts`              | New network boundary entry point — Clerk and any request interception goes here |
+
+Before implementing the Auth milestone, review the Clerk documentation for Next.js 16 / `proxy.ts` compatibility and confirm the integration approach.
 
 ---
 
@@ -176,7 +190,7 @@ You must produce all three documents before writing a single line of application
 
 ## KNOWN ASSUMPTIONS (document all in architecture-review.md)
 
-1. **Auth is in scope via Clerk** — `userId` must be present on all progress records. Clerk middleware provides `userId` on every authenticated request. Unauthenticated access to progress routes must be rejected.
+1. **Auth is in scope via Clerk** — `userId` must be present on all progress records. Clerk is configured via `proxy.ts` in Next.js 16. Unauthenticated access to progress routes must be rejected.
 
 2. **`dirty` flag is client-only** — `dirty` lives in Dexie only. It must never be stored in MongoDB. This is intentional — it is a sync concern, not a domain concern.
 
@@ -186,9 +200,11 @@ You must produce all three documents before writing a single line of application
 
 5. **Last Write Wins conflict resolution** — based on `updatedAt` and `version`. No event sourcing, CQRS, operation queues, or distributed locking.
 
-6. **API routes undefined in initial spec** — must be designed and approved before Milestone 6 begins.
+6. **API routes undefined in initial spec** — must be designed and approved before Milestone 7 begins.
 
 7. **Data sourced from DoBIH** — the Database of British and Irish Hills (DoBIH) is the canonical public source for Wainwright and Munro data. Claude Code must fetch, clean, validate against Zod schemas, and produce seed scripts. `verify-seed.ts` must exit non-zero if counts or validation fail.
+
+8. **Clerk + Next.js 16 proxy.ts** — before implementing Milestone 2, verify Clerk's current documentation for Next.js 16 compatibility and confirm the correct `proxy.ts` integration pattern.
 
 ---
 
@@ -271,7 +287,7 @@ Depends on: #1, #4
 | Category       | Scope                                                            |
 | -------------- | ---------------------------------------------------------------- |
 | `[Foundation]` | Project setup, tooling, CI, linting, environment config          |
-| `[Auth]`       | Clerk setup, middleware, protected routes, userId integration    |
+| `[Auth]`       | Clerk setup, proxy.ts, protected routes, userId integration      |
 | `[Database]`   | MongoDB setup, repository pattern, indexes, seed scripts         |
 | `[Offline]`    | Dexie setup, IndexedDB repositories, schema migrations           |
 | `[State]`      | Zustand stores, TanStack Query setup, query keys                 |
@@ -290,7 +306,7 @@ Create all milestones in GitHub before creating any issues.
 | Milestone   | Focus                                                              |
 | ----------- | ------------------------------------------------------------------ |
 | Milestone 1 | Foundation — project setup, tooling, CI                            |
-| Milestone 2 | Authentication — Clerk setup, middleware, protected routes         |
+| Milestone 2 | Authentication — Clerk setup, proxy.ts, protected routes           |
 | Milestone 3 | Database — MongoDB, repositories, seed scripts, data sourcing      |
 | Milestone 4 | Offline Architecture — Dexie, IndexedDB repositories               |
 | Milestone 5 | State Management — Zustand stores, TanStack Query                  |
@@ -326,8 +342,8 @@ export interface Peak {
   region: string;
   heightMetres: number;
   heightFeet: number;
-  latitude?: number;
-  longitude?: number;
+  latitude: number;
+  longitude: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -672,6 +688,9 @@ src/
 │   └── api/
 │       └── ...                         # API routes (defined before Milestone 7)
 │
+├── proxy.ts                            # Next.js 16 — replaces middleware.ts
+│                                       # Clerk auth and route protection goes here
+│
 ├── components/
 │   ├── peak-list/
 │   ├── peak/
@@ -823,6 +842,7 @@ Statistics are computed server-side in a service layer.
 All query keys in src/lib/queryKeys.ts.
 Separate Zustand store per concern.
 userId (Clerk) on every progress record — in MongoDB and Dexie.
+Clerk configured via proxy.ts — not middleware.ts (removed in Next.js 16).
 Seed data sourced from DoBIH. Validated. Idempotent.
 Toggle local/Atlas via MONGODB_URI only. No code changes.
 All quality gates must pass before a milestone is closed.
