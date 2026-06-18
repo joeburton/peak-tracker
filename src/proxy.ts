@@ -7,8 +7,8 @@
  * @see https://nextjs.org/docs/app/building-your-application/routing/proxy
  * @see CLAUDE.md — Milestone 2: Authentication
  */
-import type { NextRequest } from 'next/server'
-import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 
 /**
  * Pass-through proxy — no auth rules yet.
@@ -16,5 +16,5 @@ import { NextResponse } from 'next/server'
  * compatibility is verified against Clerk documentation.
  */
 export function proxy(_request: NextRequest): NextResponse {
-  return NextResponse.next()
+  return NextResponse.next();
 }
