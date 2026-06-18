@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function SmokeTestPage() {
   return (
@@ -57,6 +58,34 @@ export default function SmokeTestPage() {
             <Badge variant="secondary">Secondary</Badge>
             <Badge variant="outline">Outline</Badge>
             <Badge variant="destructive">Destructive</Badge>
+          </CardContent>
+        </Card>
+
+        {/* Select */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Select</CardTitle>
+            <CardDescription>Dropdown select component</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            <Select>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a peak list..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="wainwrights">Wainwrights (214)</SelectItem>
+                <SelectItem value="munros">Munros (282)</SelectItem>
+                <SelectItem value="corbetts">Corbetts</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select disabled>
+              <SelectTrigger>
+                <SelectValue placeholder="Disabled" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="placeholder">Placeholder</SelectItem>
+              </SelectContent>
+            </Select>
           </CardContent>
         </Card>
 
