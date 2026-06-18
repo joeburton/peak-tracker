@@ -157,13 +157,15 @@ This boundary is non-negotiable. Zustand `persist` must never be used for prefer
 
 ### 2.10 Styling — Tailwind CSS + shadcn/ui
 
-**Decision:** Tailwind CSS for utility-first styling; shadcn/ui for accessible, composable components.
+**Decision:** Tailwind CSS v4 for utility-first styling; shadcn/ui for accessible, composable components.
 
 **Rationale:**
 - Tailwind's utility classes are well-suited to mobile-first, responsive design.
 - shadcn/ui components are unstyled at their core and fully customisable — no vendor lock-in.
 - Components are copied into the codebase, so upgrades are controlled and explicit.
 - WCAG 2.1 AA accessibility is built into shadcn/ui's base components.
+
+**Implementation note:** `create-next-app@16` installs Tailwind v4 by default (using `@tailwindcss/postcss` and `@import "tailwindcss"` in `globals.css`). This differs from Tailwind v3 — there is no `tailwind.config.js` in v4; configuration is done in CSS via `@theme`. shadcn/ui compatibility with Tailwind v4 must be verified before Milestone 2 (ticket #2).
 
 ---
 
