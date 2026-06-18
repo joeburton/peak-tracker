@@ -4,13 +4,17 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function SmokeTestPage() {
   return (
     <main className="min-h-screen bg-background p-8">
-      <h1 className="text-3xl font-bold text-foreground mb-2">
-        Tailwind + shadcn/ui Smoke Test
-      </h1>
+      <div className="flex items-center justify-between mb-2">
+        <h1 className="text-3xl font-bold text-foreground">
+          Tailwind + shadcn/ui Smoke Test
+        </h1>
+        <ThemeToggle />
+      </div>
       <p className="text-muted-foreground mb-8">
         Verifies that Tailwind CSS v4 and shadcn/ui components render correctly.
       </p>
