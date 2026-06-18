@@ -2473,18 +2473,18 @@ Depends on: `[Testing] Final quality gate run`
 
 ## Summary
 
-| Milestone | Ticket Count |
-|---|---|
-| 1 — Foundation | 10 |
-| 2 — Authentication | 6 |
-| 3 — Database | 15 |
-| 4 — Offline | 7 |
-| 5 — State Management | 10 |
-| 6 — Core UI | 15 |
-| 7 — Synchronisation | 10 |
-| 8 — PWA | 7 |
-| 9 — Testing | 5 |
-| **Total** | **85** |
+| Milestone            | Ticket Count |
+| -------------------- | ------------ |
+| 1 — Foundation       | 10           |
+| 2 — Authentication   | 6            |
+| 3 — Database         | 15           |
+| 4 — Offline          | 7            |
+| 5 — State Management | 10           |
+| 6 — Core UI          | 15           |
+| 7 — Synchronisation  | 10           |
+| 8 — PWA              | 7            |
+| 9 — Testing          | 5            |
+| **Total**            | **85**       |
 
 ---
 

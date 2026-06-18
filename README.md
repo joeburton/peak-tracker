@@ -56,15 +56,15 @@ Never commit `.env.local` to the repository.
 
 ## Scripts
 
-| Command | Description |
-|---|---|
-| `npm run dev` | Start the development server (Turbopack) |
-| `npm run build` | Production build |
-| `npm run start` | Start the production server |
+| Command             | Description                                  |
+| ------------------- | -------------------------------------------- |
+| `npm run dev`       | Start the development server (Turbopack)     |
+| `npm run build`     | Production build                             |
+| `npm run start`     | Start the production server                  |
 | `npm run typecheck` | TypeScript type check (zero errors required) |
-| `npm run lint` | ESLint (zero errors required) |
-| `npm run test` | Run Vitest unit tests |
-| `npm run test:e2e` | Run Playwright E2E tests |
+| `npm run lint`      | ESLint (zero errors required)                |
+| `npm run test`      | Run Vitest unit tests                        |
+| `npm run test:e2e`  | Run Playwright E2E tests                     |
 
 All five quality gates (`typecheck`, `lint`, `test`, `test:e2e`, `build`) must pass before any milestone is considered done.
 
@@ -110,11 +110,11 @@ docs/                     # Architecture review, roadmap, tickets
 
 ## Branching
 
-| Branch | Purpose |
-|---|---|
-| `main` | Stable, production-ready code only |
-| `develop` | Integration branch — all features merge here |
-| `feature/<issue-number>-<description>` | One branch per ticket |
+| Branch                                 | Purpose                                      |
+| -------------------------------------- | -------------------------------------------- |
+| `main`                                 | Stable, production-ready code only           |
+| `develop`                              | Integration branch — all features merge here |
+| `feature/<issue-number>-<description>` | One branch per ticket                        |
 
 - Branch from `develop`
 - Open a PR to `develop` referencing the issue number
@@ -129,7 +129,7 @@ See [`CLAUDE.md`](./CLAUDE.md) for the single source of truth on all implementat
 
 Peak data is sourced from the [Database of British and Irish Hills (DoBIH)](http://www.hills-database.co.uk/).
 
-| List | Count |
-|---|---|
-| Wainwrights | 214 |
-| Munros | 282 |
+| List        | Count |
+| ----------- | ----- |
+| Wainwrights | 214   |
+| Munros      | 282   |
