@@ -17,6 +17,7 @@ DO NOT hardcode Wainwright-specific logic anywhere in the application.
 DO NOT create placeholder or stub implementations.
 DO NOT assume a single peak list. Design every feature generically.
 DO NOT use middleware.ts — Next.js 16 uses proxy.ts instead.
+DO NOT alter any MongoDB database other than `peakTracker` unless explicitly instructed by the user.
 ```
 
 ---
