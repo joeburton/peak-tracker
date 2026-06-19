@@ -1,10 +1,4 @@
-import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
-import Home from '@/app/page';
-
-describe('Home page', () => {
-  it('renders the app heading', () => {
-    render(<Home />);
-    expect(screen.getByRole('heading', { name: /peak tracker uk/i })).toBeInTheDocument();
-  });
-});
+// This directory is excluded from test discovery (see vitest.config.ts).
+// All tests are colocated with their source files.
+// This file has been moved to: src/app/page.test.tsx
+// Safe to delete this file and directory.

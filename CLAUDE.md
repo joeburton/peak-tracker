@@ -18,6 +18,7 @@ DO NOT create placeholder or stub implementations.
 DO NOT assume a single peak list. Design every feature generically.
 DO NOT use middleware.ts — Next.js 16 uses proxy.ts instead.
 DO NOT alter any MongoDB database other than `peakTracker` unless explicitly instructed by the user.
+DO NOT create `__tests__` directories — all tests are colocated with their source files.
 ```
 
 ---
@@ -112,6 +113,25 @@ The application is a **generic peak-tracking platform**. It must support any UK 
 
 - **next-pwa**
 - **Service Worker**
+
+---
+
+## TESTING CONVENTIONS
+
+### Colocation rule (Non-Negotiable)
+
+Test files must live next to the source file they test. Never use a top-level `__tests__` directory.
+
+```
+src/app/page.tsx                                    → src/app/page.test.tsx
+src/lib/logger/index.ts                             → src/lib/logger/index.test.ts
+src/features/peaks/services/statistics.ts           → src/features/peaks/services/statistics.test.ts
+src/features/peaks/repositories/peak-repository.ts  → src/features/peaks/repositories/peak-repository.test.ts
+```
+
+- Unit and integration tests: `.test.tsx` / `.test.ts` colocated with their source file
+- E2E tests only: `e2e/` directory at the project root (Playwright)
+- The `src/__tests__/` directory is **excluded from vitest discovery** — never add files there
 
 ---
 
@@ -313,7 +333,7 @@ Create all milestones in GitHub before creating any issues.
 | Milestone 5 | State Management — Zustand stores, TanStack Query                  |
 | Milestone 6 | Core UI — layout, navigation, search, filters, sorting, statistics |
 | Milestone 7 | Synchronisation — API routes, sync engine, conflict resolution     |
-| Milestone 8 | PWA — service worker, offline support, install                     |
+| Milestone 8 | PWA — service worker, offline support, install prompt              |
 | Milestone 9 | Testing — coverage to 80%, E2E suite passing                       |
 
 ---
@@ -677,6 +697,7 @@ scripts/
 src/
 ├── app/
 │   ├── page.tsx                        # Home — list all peak lists
+│   ├── page.test.tsx                   # Colocated unit test
 │   ├── sign-in/[[...sign-in]]/
 │   │   └── page.tsx                    # Clerk sign-in
 │   ├── sign-up/[[...sign-up]]/
@@ -726,6 +747,8 @@ docs/
 ├── architecture-review.md
 ├── project-roadmap.md
 └── github-tickets.md
+
+e2e/                                    # Playwright E2E tests only
 ```
 
 ---
@@ -847,4 +870,5 @@ Clerk configured via proxy.ts — not middleware.ts (removed in Next.js 16).
 Seed data sourced from DoBIH. Validated. Idempotent.
 Toggle local/Atlas via MONGODB_URI only. No code changes.
 All quality gates must pass before a milestone is closed.
+Tests are colocated — src/app/page.tsx tests at src/app/page.test.tsx. Never use __tests__ directories.
 ```
