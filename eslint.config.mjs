@@ -7,6 +7,12 @@ const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   prettier,
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    rules: {
+      'no-console': ['error', { allow: ['info', 'warn', 'error'] }],
+    },
+  },
   globalIgnores([
     '.next/**',
     'out/**',
