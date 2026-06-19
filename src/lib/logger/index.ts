@@ -13,20 +13,35 @@ function getMinLevel(): number {
   return LEVELS.info;
 }
 
+function safeSerialise(entry: Record<string, unknown>): string {
+  try {
+    return JSON.stringify(entry);
+  } catch {
+    return JSON.stringify({
+      level: entry['level'],
+      message: entry['message'],
+      timestamp: entry['timestamp'],
+      context: '[unserializable]',
+    });
+  }
+}
+
 function log(level: LogLevel, message: string, context?: Record<string, unknown>): void {
   if (LEVELS[level] < getMinLevel()) return;
 
-  const entry = {
+  const entry: Record<string, unknown> = {
     level,
     message,
     timestamp: new Date().toISOString(),
     ...(context !== undefined ? { context } : {}),
   };
 
-  const output = JSON.stringify(entry);
+  const output = safeSerialise(entry);
 
   switch (level) {
     case 'debug':
+      console.debug(output);
+      break;
     case 'info':
       console.info(output);
       break;

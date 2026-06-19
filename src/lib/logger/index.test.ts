@@ -9,6 +9,7 @@ function lastCallArg(spy: ReturnType<typeof vi.fn>): unknown {
 
 describe('logger', () => {
   beforeEach(() => {
+    vi.spyOn(console, 'debug').mockImplementation(() => {});
     vi.spyOn(console, 'info').mockImplementation(() => {});
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -16,12 +17,17 @@ describe('logger', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
   });
 
   describe('in test environment (NODE_ENV=test)', () => {
+    beforeEach(() => {
+      vi.stubEnv('NODE_ENV', 'test');
+    });
+
     it('does not output debug messages', () => {
       logger.debug('test debug');
-      expect(console.info).not.toHaveBeenCalled();
+      expect(console.debug).not.toHaveBeenCalled();
     });
 
     it('does not output info messages', () => {
@@ -45,13 +51,9 @@ describe('logger', () => {
       vi.stubEnv('NODE_ENV', 'production');
     });
 
-    afterEach(() => {
-      vi.unstubAllEnvs();
-    });
-
     it('does not output debug messages (below min level)', () => {
       logger.debug('debug message');
-      expect(console.info).not.toHaveBeenCalled();
+      expect(console.debug).not.toHaveBeenCalled();
     });
 
     it('outputs info messages as JSON', () => {
@@ -87,6 +89,15 @@ describe('logger', () => {
       const output = JSON.parse(lastCallArg(console.info as ReturnType<typeof vi.fn>) as string);
       expect(output).not.toHaveProperty('context');
     });
+
+    it('does not throw when context contains a circular reference', () => {
+      const circular: Record<string, unknown> = {};
+      circular['self'] = circular;
+      expect(() => logger.error('circular', circular)).not.toThrow();
+      expect(console.error).toHaveBeenCalledOnce();
+      const output = JSON.parse(lastCallArg(console.error as ReturnType<typeof vi.fn>) as string);
+      expect(output.context).toBe('[unserializable]');
+    });
   });
 
   describe('in development environment (NODE_ENV=development)', () => {
@@ -94,15 +105,16 @@ describe('logger', () => {
       vi.stubEnv('NODE_ENV', 'development');
     });
 
-    afterEach(() => {
-      vi.unstubAllEnvs();
+    it('outputs debug messages via console.debug', () => {
+      logger.debug('verbose debug');
+      expect(console.debug).toHaveBeenCalledOnce();
+      const output = JSON.parse(lastCallArg(console.debug as ReturnType<typeof vi.fn>) as string);
+      expect(output).toMatchObject({ level: 'debug', message: 'verbose debug' });
     });
 
-    it('outputs debug messages', () => {
-      logger.debug('verbose debug');
+    it('outputs info messages', () => {
+      logger.info('dev info');
       expect(console.info).toHaveBeenCalledOnce();
-      const output = JSON.parse(lastCallArg(console.info as ReturnType<typeof vi.fn>) as string);
-      expect(output).toMatchObject({ level: 'debug', message: 'verbose debug' });
     });
   });
 });

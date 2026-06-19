@@ -10,7 +10,7 @@ const eslintConfig = defineConfig([
   {
     files: ['src/**/*.{ts,tsx}'],
     rules: {
-      'no-console': ['error', { allow: ['info', 'warn', 'error'] }],
+      'no-console': ['error', { allow: ['debug', 'info', 'warn', 'error'] }],
     },
   },
   globalIgnores([
