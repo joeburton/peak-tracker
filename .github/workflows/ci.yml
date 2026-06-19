@@ -8,7 +8,7 @@ on:
 
 jobs:
   ci:
-    name: Type check, lint, build
+    name: CI
     runs-on: ubuntu-latest
 
     steps:
@@ -18,7 +18,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Install dependencies
@@ -35,3 +35,9 @@ jobs:
 
       - name: Test
         run: npm run test
+
+      - name: Install Playwright browsers (Chromium only)
+        run: npx playwright install chromium --with-deps
+
+      - name: E2E tests
+        run: npm run test:e2e

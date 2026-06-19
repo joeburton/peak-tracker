@@ -22,8 +22,11 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run dev',
+    // CI: serve the production build compiled in the Build step.
+    // Local: reuse whatever server is already running (dev or prod).
+    command: process.env['CI'] ? 'npm run start' : 'npm run dev',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env['CI'],
+    timeout: 120_000,
   },
 });
