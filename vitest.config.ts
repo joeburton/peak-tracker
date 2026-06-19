@@ -19,7 +19,6 @@ export default defineConfig({
         'src/**/*.test.{ts,tsx}',
         'src/**/*.spec.{ts,tsx}',
         'src/app/layout.tsx',
-        'src/app/globals.css',
       ],
       thresholds: {
         lines: 80,
