@@ -83,13 +83,19 @@ describe('getServerUserId', () => {
     mockAuth.mockResolvedValue({ userId: null })
 
     await expect(getServerUserId()).rejects.toThrow(
-      'getServerUserId() called without an authenticated session'
+      'getServerUserId() called without an authenticated session. ' +
+        'Ensure the route is protected by proxy.ts before calling this utility.'
     )
   })
 
-  it('throws a clean error when auth() itself throws', async () => {
-    mockAuth.mockRejectedValue(new Error('Missing CLERK_SECRET_KEY'))
+  it('throws a clean error when auth() itself throws, preserving the cause', async () => {
+    const cause = new Error('Missing CLERK_SECRET_KEY')
+    mockAuth.mockRejectedValue(cause)
 
-    await expect(getServerUserId()).rejects.toThrow('Authentication service unavailable.')
+    const err = await getServerUserId().catch((e: unknown) => e)
+
+    expect(err).toBeInstanceOf(Error)
+    expect((err as Error).message).toBe('Authentication service unavailable.')
+    expect((err as Error).cause).toBe(cause)
   })
 })
