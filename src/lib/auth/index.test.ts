@@ -86,4 +86,10 @@ describe('getServerUserId', () => {
       'getServerUserId() called without an authenticated session'
     )
   })
+
+  it('throws a clean error when auth() itself throws', async () => {
+    mockAuth.mockRejectedValue(new Error('Missing CLERK_SECRET_KEY'))
+
+    await expect(getServerUserId()).rejects.toThrow('Authentication service unavailable.')
+  })
 })

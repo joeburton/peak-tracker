@@ -10,7 +10,9 @@ type AuthFailure = { userId: null; error: NextResponse }
  * an authenticated context — which is a programming error, not a user error.
  */
 export async function getServerUserId(): Promise<string> {
-  const { userId } = await auth()
+  const { userId } = await auth().catch(() => {
+    throw new Error('Authentication service unavailable.')
+  })
   if (!userId) {
     throw new Error(
       'getServerUserId() called without an authenticated session. ' +
