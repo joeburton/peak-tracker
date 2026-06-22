@@ -11,6 +11,18 @@ jobs:
     name: CI
     runs-on: ubuntu-latest
 
+    # Clerk credentials are required at build time (NEXT_PUBLIC_* vars are
+    # baked into the client bundle by Next.js) and at runtime (next start).
+    # Add NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY as repository
+    # secrets at Settings → Secrets and variables → Actions.
+    env:
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+      CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+      NEXT_PUBLIC_CLERK_SIGN_IN_URL: /sign-in
+      NEXT_PUBLIC_CLERK_SIGN_UP_URL: /sign-up
+      NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: /
+      NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: /
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
