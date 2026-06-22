@@ -19,6 +19,8 @@ vi.mock('@clerk/nextjs/server', () => ({
   },
   // Minimal path-to-regexp approximation — sufficient for the patterns in proxy.ts:
   //   '/'                → exact match
+  //   '/offline'         → exact match
+  //   '/smoke-test'      → exact match
   //   '/peak-lists'      → exact match (bare index)
   //   '/peak-lists/(.*)' → /peak-lists/ + anything
   //   '/sign-in(.*)'     → /sign-in + anything (including bare /sign-in)
@@ -72,11 +74,32 @@ describe('proxy — protected routes', () => {
     expect(url.pathname).toBe('/sign-in')
     expect(url.searchParams.get('redirect_url')).toBe('/dashboard')
   })
+
+  it('preserves query string in redirect_url', async () => {
+    const res = await handler(unauthed, req('/dashboard?tab=stats&sort=height'))
+    expect(res).toBeDefined()
+    expect(res!.status).toBe(307)
+    const location = res!.headers.get('location')
+    expect(location).not.toBeNull()
+    const url = new URL(location!)
+    expect(url.pathname).toBe('/sign-in')
+    expect(url.searchParams.get('redirect_url')).toBe('/dashboard?tab=stats&sort=height')
+  })
 })
 
 describe('proxy — public routes', () => {
   it('allows unauthenticated requests to / through', async () => {
     const res = await handler(unauthed, req('/'))
+    expect(res).toBeUndefined()
+  })
+
+  it('allows unauthenticated requests to /offline through', async () => {
+    const res = await handler(unauthed, req('/offline'))
+    expect(res).toBeUndefined()
+  })
+
+  it('allows unauthenticated requests to /smoke-test through', async () => {
+    const res = await handler(unauthed, req('/smoke-test'))
     expect(res).toBeUndefined()
   })
 

@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server'
 
 const isPublicRoute = createRouteMatcher([
   '/',
+  '/offline',
+  '/smoke-test',
   '/peak-lists',      // bare index — must be listed separately from the wildcard below
   '/peak-lists/(.*)',
   '/sign-in(.*)',
@@ -19,11 +21,11 @@ export default clerkMiddleware(async (auth, request) => {
       }
       // Page routes redirect to sign-in, preserving the return destination
       const signInUrl = new URL('/sign-in', request.url)
-      signInUrl.searchParams.set('redirect_url', request.nextUrl.pathname)
+      signInUrl.searchParams.set('redirect_url', request.nextUrl.pathname + request.nextUrl.search)
       return NextResponse.redirect(signInUrl)
     }
   }
-}, { signInUrl: '/sign-in' })
+})
 
 export const config = {
   matcher: [
