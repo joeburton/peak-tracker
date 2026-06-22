@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { requireAuth, unauthorizedResponse } from './index'
+import { requireAuth, unauthorizedResponse, getServerUserId } from './index'
 
 const mockAuth = vi.fn()
 
@@ -67,5 +67,23 @@ describe('requireAuth', () => {
 
     expect(response.status).toBe(401)
     expect(body).toEqual({ error: 'Unauthorized' })
+  })
+})
+
+describe('getServerUserId', () => {
+  it('returns userId as a string for an authenticated session', async () => {
+    mockAuth.mockResolvedValue({ userId: 'user_server_123' })
+
+    const userId = await getServerUserId()
+
+    expect(userId).toBe('user_server_123')
+  })
+
+  it('throws when called without an authenticated session', async () => {
+    mockAuth.mockResolvedValue({ userId: null })
+
+    await expect(getServerUserId()).rejects.toThrow(
+      'getServerUserId() called without an authenticated session'
+    )
   })
 })

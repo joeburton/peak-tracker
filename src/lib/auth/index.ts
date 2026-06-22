@@ -4,6 +4,22 @@ import { NextResponse } from 'next/server'
 type AuthSuccess = { userId: string; error: null }
 type AuthFailure = { userId: null; error: NextResponse }
 
+/**
+ * For Server Components on routes already protected by proxy.ts.
+ * Returns userId as a non-nullable string, or throws if called outside
+ * an authenticated context — which is a programming error, not a user error.
+ */
+export async function getServerUserId(): Promise<string> {
+  const { userId } = await auth()
+  if (!userId) {
+    throw new Error(
+      'getServerUserId() called without an authenticated session. ' +
+        'Ensure the route is protected by proxy.ts before calling this utility.'
+    )
+  }
+  return userId
+}
+
 export function unauthorizedResponse(): NextResponse {
   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 }
