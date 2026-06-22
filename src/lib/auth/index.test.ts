@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { requireAuth } from './index'
+import { requireAuth, unauthorizedResponse } from './index'
 
 const mockAuth = vi.fn()
 
@@ -35,9 +35,20 @@ describe('requireAuth', () => {
     mockAuth.mockResolvedValue({ userId: null })
 
     const result = await requireAuth()
-    const body = await result.error!.json()
 
+    expect(result.error).not.toBeNull()
+    const body = await result.error!.json()
     expect(body).toEqual({ error: 'Unauthorized' })
+  })
+
+  it('returns a 500 response when auth() throws', async () => {
+    mockAuth.mockRejectedValue(new Error('Missing CLERK_SECRET_KEY'))
+
+    const result = await requireAuth()
+
+    expect(result.userId).toBeNull()
+    expect(result.error).not.toBeNull()
+    expect(result.error!.status).toBe(500)
   })
 
   it('userId is typed as string after null-checking error', async () => {
@@ -46,8 +57,15 @@ describe('requireAuth', () => {
     const result = await requireAuth()
     if (result.error) return
 
-    // TypeScript narrows userId to string here — compile-time guarantee
     const userId: string = result.userId
     expect(userId).toBe('user_abc')
+  })
+
+  it('unauthorizedResponse produces a 401 with the expected body', async () => {
+    const response = unauthorizedResponse()
+    const body = await response.json()
+
+    expect(response.status).toBe(401)
+    expect(body).toEqual({ error: 'Unauthorized' })
   })
 })
