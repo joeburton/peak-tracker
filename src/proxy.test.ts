@@ -19,6 +19,7 @@ vi.mock('@clerk/nextjs/server', () => ({
   },
   // Minimal path-to-regexp approximation — sufficient for the patterns in proxy.ts:
   //   '/'                → exact match
+  //   '/peak-lists'      → exact match (bare index)
   //   '/peak-lists/(.*)' → /peak-lists/ + anything
   //   '/sign-in(.*)'     → /sign-in + anything (including bare /sign-in)
   //   '/sign-up(.*)'     → /sign-up + anything
@@ -35,6 +36,9 @@ vi.mock('@clerk/nextjs/server', () => ({
 // with our mock and `handler` is captured before any test runs.
 beforeAll(async () => {
   await import('./proxy')
+  if (!handler) {
+    throw new Error('proxy.ts did not call clerkMiddleware — handler was not captured')
+  }
 })
 
 const req = (path: string) =>
@@ -47,11 +51,10 @@ const unauthed = (): Promise<{ userId: null }> =>
   Promise.resolve({ userId: null })
 
 describe('proxy — protected routes', () => {
-  it('redirects unauthenticated requests to /api/progress to /sign-in', async () => {
+  it('returns 401 JSON for unauthenticated API requests', async () => {
     const res = await handler(unauthed, req('/api/progress'))
     expect(res).toBeDefined()
-    expect(res!.status).toBe(307)
-    expect(new URL(res!.headers.get('location')!).pathname).toBe('/sign-in')
+    expect(res!.status).toBe(401)
   })
 
   it('allows authenticated requests to /api/progress through', async () => {
@@ -59,17 +62,26 @@ describe('proxy — protected routes', () => {
     expect(res).toBeUndefined()
   })
 
-  it('redirects unauthenticated requests to an unknown route to /sign-in', async () => {
+  it('redirects unauthenticated page requests to /sign-in with redirect_url', async () => {
     const res = await handler(unauthed, req('/dashboard'))
     expect(res).toBeDefined()
     expect(res!.status).toBe(307)
-    expect(new URL(res!.headers.get('location')!).pathname).toBe('/sign-in')
+    const location = res!.headers.get('location')
+    expect(location).not.toBeNull()
+    const url = new URL(location!)
+    expect(url.pathname).toBe('/sign-in')
+    expect(url.searchParams.get('redirect_url')).toBe('/dashboard')
   })
 })
 
 describe('proxy — public routes', () => {
   it('allows unauthenticated requests to / through', async () => {
     const res = await handler(unauthed, req('/'))
+    expect(res).toBeUndefined()
+  })
+
+  it('allows unauthenticated requests to /peak-lists through', async () => {
+    const res = await handler(unauthed, req('/peak-lists'))
     expect(res).toBeUndefined()
   })
 
