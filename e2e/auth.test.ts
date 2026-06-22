@@ -5,7 +5,7 @@ test('sign-in page renders Clerk component', async ({ page }) => {
   await expect(page).toHaveURL(/\/sign-in/)
   await expect(page.getByRole('main')).toBeVisible()
   // Clerk renders an identifier/email input once the component mounts
-  await expect(page.locator('input').first()).toBeVisible({ timeout: 10000 })
+  await expect(page.getByRole('textbox').first()).toBeVisible({ timeout: 10000 })
 })
 
 test('sign-up page renders Clerk component', async ({ page }) => {
@@ -13,5 +13,5 @@ test('sign-up page renders Clerk component', async ({ page }) => {
   await expect(page).toHaveURL(/\/sign-up/)
   await expect(page.getByRole('main')).toBeVisible()
   // Clerk renders an identifier/email input once the component mounts
-  await expect(page.locator('input').first()).toBeVisible({ timeout: 10000 })
+  await expect(page.getByRole('textbox').first()).toBeVisible({ timeout: 10000 })
 })
