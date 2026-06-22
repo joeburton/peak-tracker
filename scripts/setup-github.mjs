@@ -240,7 +240,7 @@ async function main() {
       'GET',
       `/repos/${OWNER}/${REPO}/milestones?state=open&per_page=100`
     );
-  } catch (_) {
+  } catch {
     // Ignore — we'll try to create all milestones
   }
 

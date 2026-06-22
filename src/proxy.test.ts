@@ -13,7 +13,7 @@ type ProxyHandler = (
 let handler: ProxyHandler
 
 vi.mock('@clerk/nextjs/server', () => ({
-  clerkMiddleware: (fn: ProxyHandler, _opts?: unknown) => {
+  clerkMiddleware: (fn: ProxyHandler) => {
     handler = fn
     return vi.fn()
   },
