@@ -1,5 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
+import { unauthorizedResponse } from '@/lib/auth'
 
 const isPublicRoute = createRouteMatcher([
   '/',
@@ -17,7 +18,7 @@ export default clerkMiddleware(async (auth, request) => {
     if (!userId) {
       // API routes return 401 JSON — fetch clients cannot follow an HTML redirect
       if (request.nextUrl.pathname.startsWith('/api')) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        return unauthorizedResponse()
       }
       // Page routes redirect to sign-in, preserving the return destination
       const signInUrl = new URL('/sign-in', request.url)
