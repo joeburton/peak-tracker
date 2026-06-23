@@ -7,11 +7,14 @@ async function main(): Promise<void> {
   console.log('Indexes created successfully.')
 }
 
+let exitCode = 0
+
 main()
   .catch((err: unknown) => {
     console.error('Failed to create indexes:', err)
-    process.exit(1)
+    exitCode = 1
   })
-  .finally(() => {
-    disconnect().catch(() => {})
+  .finally(async () => {
+    await disconnect().catch((e: unknown) => console.error('disconnect error:', e))
+    process.exit(exitCode)
   })

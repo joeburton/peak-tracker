@@ -16,6 +16,6 @@ export async function createIndexes(): Promise<void> {
   ])
 
   await db.collection(COLLECTIONS.progress).createIndexes([
-    { key: { userId: 1 }, name: 'progress_userId_unique', unique: true },
+    { key: { userId: 1 }, name: 'progress_userId' },
   ])
 }

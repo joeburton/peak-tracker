@@ -9,20 +9,25 @@ import { createIndexes } from './indexes'
 import { getDb } from '@/lib/db/mongodb'
 import { COLLECTIONS } from '@/lib/db/collections'
 
-const mockCreateIndexesFn = vi.fn().mockResolvedValue([])
-const mockCollection = vi.fn(() => ({ createIndexes: mockCreateIndexesFn }))
+const peakListsCreateIndexes = vi.fn().mockResolvedValue([])
+const peaksCreateIndexes = vi.fn().mockResolvedValue([])
+const progressCreateIndexes = vi.fn().mockResolvedValue([])
+
+const mockCollection = vi.fn((name: string) => {
+  if (name === COLLECTIONS.peakLists) return { createIndexes: peakListsCreateIndexes }
+  if (name === COLLECTIONS.peaks) return { createIndexes: peaksCreateIndexes }
+  return { createIndexes: progressCreateIndexes }
+})
+
 const mockDb = { collection: mockCollection } as unknown as Db
 
 beforeEach(() => {
   vi.mocked(getDb).mockResolvedValue(mockDb)
-  mockCreateIndexesFn.mockReset().mockResolvedValue([])
+  peakListsCreateIndexes.mockReset().mockResolvedValue([])
+  peaksCreateIndexes.mockReset().mockResolvedValue([])
+  progressCreateIndexes.mockReset().mockResolvedValue([])
   mockCollection.mockClear()
 })
-
-// createIndexes() calls db.collection() three times in order:
-// call 0 → peakLists, call 1 → peaks, call 2 → progress
-// Each call to collection() returns the same mock — so createIndexesFn
-// is invoked once per collection, in the same order.
 
 describe('createIndexes', () => {
   it('creates indexes on all three collections', async () => {
@@ -31,13 +36,15 @@ describe('createIndexes', () => {
     expect(mockCollection).toHaveBeenCalledWith(COLLECTIONS.peakLists)
     expect(mockCollection).toHaveBeenCalledWith(COLLECTIONS.peaks)
     expect(mockCollection).toHaveBeenCalledWith(COLLECTIONS.progress)
-    expect(mockCreateIndexesFn).toHaveBeenCalledTimes(3)
+    expect(peakListsCreateIndexes).toHaveBeenCalledTimes(1)
+    expect(peaksCreateIndexes).toHaveBeenCalledTimes(1)
+    expect(progressCreateIndexes).toHaveBeenCalledTimes(1)
   })
 
   it('creates a unique slug index on peakLists', async () => {
     await createIndexes()
 
-    const [peakListIndexes] = mockCreateIndexesFn.mock.calls[0]!
+    const [peakListIndexes] = peakListsCreateIndexes.mock.calls[0]!
     expect(peakListIndexes).toContainEqual(
       expect.objectContaining({ key: { slug: 1 }, unique: true }),
     )
@@ -46,7 +53,7 @@ describe('createIndexes', () => {
   it('creates a unique slug index on peaks', async () => {
     await createIndexes()
 
-    const [peakIndexes] = mockCreateIndexesFn.mock.calls[1]!
+    const [peakIndexes] = peaksCreateIndexes.mock.calls[0]!
     expect(peakIndexes).toContainEqual(
       expect.objectContaining({ key: { slug: 1 }, unique: true }),
     )
@@ -55,28 +62,30 @@ describe('createIndexes', () => {
   it('creates peakListSlug, region, and heightMetres indexes on peaks', async () => {
     await createIndexes()
 
-    const [peakIndexes] = mockCreateIndexesFn.mock.calls[1]!
+    const [peakIndexes] = peaksCreateIndexes.mock.calls[0]!
     expect(peakIndexes).toContainEqual(expect.objectContaining({ key: { peakListSlug: 1 } }))
     expect(peakIndexes).toContainEqual(expect.objectContaining({ key: { region: 1 } }))
     expect(peakIndexes).toContainEqual(expect.objectContaining({ key: { heightMetres: 1 } }))
   })
 
-  it('creates a unique userId index on progress', async () => {
+  it('creates a userId index on progress', async () => {
     await createIndexes()
 
-    const [progressIndexes] = mockCreateIndexesFn.mock.calls[2]!
-    expect(progressIndexes).toContainEqual(
+    const [progressIndexes] = progressCreateIndexes.mock.calls[0]!
+    expect(progressIndexes).toContainEqual(expect.objectContaining({ key: { userId: 1 } }))
+    expect(progressIndexes).not.toContainEqual(
       expect.objectContaining({ key: { userId: 1 }, unique: true }),
     )
   })
 
-  it('is idempotent — safe to call multiple times without error', async () => {
+  it('does not throw when called twice with the mock', async () => {
     await createIndexes()
     await createIndexes()
 
-    // MongoDB createIndexes is idempotent by design — calling twice with the
-    // same index spec is a no-op on a live database. The function itself
-    // delegates entirely to the driver, so two calls must not throw.
-    expect(mockCreateIndexesFn).toHaveBeenCalledTimes(6) // 3 collections × 2 runs
+    // Verifies the function itself has no state that prevents repeated calls.
+    // Real MongoDB idempotency (no IndexOptionsConflict) requires an integration test.
+    expect(peakListsCreateIndexes).toHaveBeenCalledTimes(2)
+    expect(peaksCreateIndexes).toHaveBeenCalledTimes(2)
+    expect(progressCreateIndexes).toHaveBeenCalledTimes(2)
   })
 })
