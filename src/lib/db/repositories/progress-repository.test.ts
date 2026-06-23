@@ -29,12 +29,11 @@ const progressDoc = {
   version: 3,
 }
 
-// Model fixture — what toModel() returns (ISO string, dirty always false)
+// Model fixture — what toModel() returns (ISO string, no dirty — it is a client-only Dexie field)
 const progressModel = {
   userId: 'user-123',
   completedPeakIds: ['peak-1', 'peak-2'],
   updatedAt: testDateStr,
-  dirty: false,
   version: 3,
 }
 
@@ -87,15 +86,6 @@ describe('ProgressRepository.findByUserId', () => {
     const result = await repo.findByUserId('user-123')
 
     expect(result!.updatedAt).toBe(testDateStr)
-  })
-
-  it('always sets dirty to false — server data is never dirty', async () => {
-    mockFindOne.mockResolvedValue(progressDoc)
-    const repo = createProgressRepository(mockDb)
-
-    const result = await repo.findByUserId('user-123')
-
-    expect(result!.dirty).toBe(false)
   })
 
   it('defaults completedPeakIds to [] when the field is absent from the document', async () => {
@@ -160,15 +150,6 @@ describe('ProgressRepository.upsert', () => {
     const [, updateArg] = mockFindOneAndUpdate.mock.calls[0]!
     expect(updateArg.$set).not.toHaveProperty('dirty')
     expect(updateArg.$inc).not.toHaveProperty('dirty')
-  })
-
-  it('always sets dirty to false on the returned model', async () => {
-    mockFindOneAndUpdate.mockResolvedValue(progressDoc)
-    const repo = createProgressRepository(mockDb)
-
-    const result = await repo.upsert('user-123', update)
-
-    expect(result.dirty).toBe(false)
   })
 
   it('uses upsert: true and returnDocument: after', async () => {
