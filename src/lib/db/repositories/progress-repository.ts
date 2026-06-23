@@ -31,7 +31,6 @@ function toModel(doc: ProgressDocument): UserProgress {
     userId: doc.userId,
     completedPeakIds: doc.completedPeakIds ?? [],
     updatedAt: doc.updatedAt.toISOString(),
-    dirty: false, // server data is always clean — dirty lives in Dexie only
     version: doc.version,
   }
 }
