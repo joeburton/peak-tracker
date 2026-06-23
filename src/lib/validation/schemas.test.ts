@@ -68,6 +68,16 @@ describe('PeakListSchema', () => {
     expect(result.success).toBe(false)
   })
 
+  it('rejects peakCount of 0 — a list must have at least one peak', () => {
+    const result = PeakListSchema.safeParse({ ...validPeakList, peakCount: 0 })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects an empty string description — omit the field instead', () => {
+    const result = PeakListSchema.safeParse({ ...validPeakList, description: '' })
+    expect(result.success).toBe(false)
+  })
+
   it('rejects a missing id', () => {
     const { id: _id, ...withoutId } = validPeakList
     const result = PeakListSchema.safeParse(withoutId)
@@ -144,6 +154,11 @@ describe('PeakSchema', () => {
     expect(result.success).toBe(false)
   })
 
+  it('accepts ISO 8601 strings with timezone offsets for createdAt and updatedAt', () => {
+    expect(PeakSchema.safeParse({ ...validPeak, createdAt: '2024-01-01T00:00:00.000+01:00' }).success).toBe(true)
+    expect(PeakSchema.safeParse({ ...validPeak, updatedAt: '2024-06-15T12:30:00.000-05:00' }).success).toBe(true)
+  })
+
   it('rejects an empty region', () => {
     const result = PeakSchema.safeParse({ ...validPeak, region: '' })
     expect(result.success).toBe(false)
@@ -161,6 +176,16 @@ describe('UserProgressSchema', () => {
 
   it('accepts an empty completedPeakIds array', () => {
     const result = UserProgressSchema.safeParse({ ...validUserProgress, completedPeakIds: [] })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects empty string peak IDs in completedPeakIds', () => {
+    const result = UserProgressSchema.safeParse({ ...validUserProgress, completedPeakIds: ['pk-1', ''] })
+    expect(result.success).toBe(false)
+  })
+
+  it('accepts ISO 8601 strings with timezone offsets for updatedAt', () => {
+    const result = UserProgressSchema.safeParse({ ...validUserProgress, updatedAt: '2024-06-01T12:00:00.000+01:00' })
     expect(result.success).toBe(true)
   })
 

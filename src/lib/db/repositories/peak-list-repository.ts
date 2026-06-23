@@ -1,4 +1,5 @@
 import type { Collection, Db, ObjectId } from 'mongodb'
+import { PeakListSchema } from '@/lib/validation/schemas'
 import type { PeakList } from '@/lib/types/domain'
 import { COLLECTIONS } from '@/lib/db/collections'
 
@@ -15,13 +16,13 @@ interface PeakListDocument {
 const PROJECTION = { _id: 1, slug: 1, name: 1, description: 1, peakCount: 1 } as const
 
 function toModel(doc: PeakListDocument): PeakList {
-  return {
+  return PeakListSchema.parse({
     id: String(doc._id),
     slug: doc.slug,
     name: doc.name,
     description: doc.description,
     peakCount: doc.peakCount,
-  }
+  })
 }
 
 export interface IPeakListRepository {

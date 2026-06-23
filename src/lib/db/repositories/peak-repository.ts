@@ -1,4 +1,5 @@
 import type { Collection, Db, ObjectId } from 'mongodb'
+import { PeakSchema } from '@/lib/validation/schemas'
 import type { Peak } from '@/lib/types/domain'
 import { COLLECTIONS } from '@/lib/db/collections'
 
@@ -31,7 +32,7 @@ const PROJECTION = {
 } as const
 
 function toModel(doc: PeakDocument): Peak {
-  return {
+  return PeakSchema.parse({
     id: String(doc._id),
     peakListSlug: doc.peakListSlug,
     slug: doc.slug,
@@ -43,7 +44,7 @@ function toModel(doc: PeakDocument): Peak {
     longitude: doc.longitude,
     createdAt: doc.createdAt.toISOString(),
     updatedAt: doc.updatedAt.toISOString(),
-  }
+  })
 }
 
 export interface IPeakRepository {
