@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createPeakListRepository } from './peak-list-repository'
-import type { Db } from 'mongodb'
+import { COLLECTIONS } from '@/lib/db/collections'
+import type { Db, ObjectId } from 'mongodb'
 
 const mockToArray = vi.fn()
 const mockFindOne = vi.fn()
@@ -19,8 +20,20 @@ beforeEach(() => {
   mockFind.mockClear()
 })
 
+// String _id — covers the string branch of ObjectId | string
 const doc1 = { _id: 'aaa', slug: 'wainwrights', name: 'Wainwrights', peakCount: 214 }
 const doc2 = { _id: 'bbb', slug: 'munros', name: 'Munros', description: 'Scottish peaks', peakCount: 282 }
+
+// ObjectId-like _id — covers the ObjectId branch (String() calls .toString())
+const mockObjectId = { toString: () => 'objectid-hex' } as unknown as ObjectId
+const docWithObjectId = { _id: mockObjectId, slug: 'corbetts', name: 'Corbetts', peakCount: 222 }
+
+describe('PeakListRepository', () => {
+  it('uses the peakLists collection', () => {
+    createPeakListRepository(mockDb)
+    expect(mockDb.collection).toHaveBeenCalledWith(COLLECTIONS.peakLists)
+  })
+})
 
 describe('PeakListRepository.findAll', () => {
   it('returns all peak lists mapped to PeakList models', async () => {
@@ -53,6 +66,27 @@ describe('PeakListRepository.findAll', () => {
     expect(item.id).toBe('aaa')
     expect(item).not.toHaveProperty('_id')
   })
+
+  it('calls toString() on an ObjectId _id to produce the hex string', async () => {
+    mockToArray.mockResolvedValue([docWithObjectId])
+    const repo = createPeakListRepository(mockDb)
+
+    const result = await repo.findAll()
+
+    expect(result[0]!.id).toBe('objectid-hex')
+  })
+
+  it('passes a field projection to limit returned fields', async () => {
+    mockToArray.mockResolvedValue([])
+    const repo = createPeakListRepository(mockDb)
+
+    await repo.findAll()
+
+    expect(mockFind).toHaveBeenCalledWith(
+      {},
+      { projection: { _id: 1, slug: 1, name: 1, description: 1, peakCount: 1 } },
+    )
+  })
 })
 
 describe('PeakListRepository.findBySlug', () => {
@@ -62,7 +96,10 @@ describe('PeakListRepository.findBySlug', () => {
 
     const result = await repo.findBySlug('munros')
 
-    expect(mockFindOne).toHaveBeenCalledWith({ slug: 'munros' })
+    expect(mockFindOne).toHaveBeenCalledWith(
+      { slug: 'munros' },
+      { projection: { _id: 1, slug: 1, name: 1, description: 1, peakCount: 1 } },
+    )
     expect(result).toEqual({ id: 'bbb', slug: 'munros', name: 'Munros', description: 'Scottish peaks', peakCount: 282 })
   })
 
@@ -83,5 +120,14 @@ describe('PeakListRepository.findBySlug', () => {
 
     expect(result!.id).toBe('aaa')
     expect(result).not.toHaveProperty('_id')
+  })
+
+  it('calls toString() on an ObjectId _id to produce the hex string', async () => {
+    mockFindOne.mockResolvedValue(docWithObjectId)
+    const repo = createPeakListRepository(mockDb)
+
+    const result = await repo.findBySlug('corbetts')
+
+    expect(result!.id).toBe('objectid-hex')
   })
 })
