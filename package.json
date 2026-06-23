@@ -16,7 +16,8 @@
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage --passWithNoTests",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "create-indexes": "tsx scripts/create-indexes.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.5.7",
@@ -50,6 +51,7 @@
     "jsdom": "^29.1.1",
     "prettier": "^3.8.4",
     "tailwindcss": "^4",
+    "tsx": "^4.22.4",
     "typescript": "^5",
     "vitest": "^2.0.0"
   }
