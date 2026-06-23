@@ -29,7 +29,7 @@ const PROJECTION = {
 function toModel(doc: ProgressDocument): UserProgress {
   return {
     userId: doc.userId,
-    completedPeakIds: doc.completedPeakIds,
+    completedPeakIds: doc.completedPeakIds ?? [],
     updatedAt: doc.updatedAt.toISOString(),
     dirty: false, // server data is always clean — dirty lives in Dexie only
     version: doc.version,
@@ -51,12 +51,17 @@ export function createProgressRepository(db: Db): IProgressRepository {
     },
 
     async upsert(userId: string, data: ProgressUpdate): Promise<UserProgress> {
+      const updatedAt = new Date(data.updatedAt)
+      if (isNaN(updatedAt.getTime())) {
+        throw new Error(`Invalid updatedAt value: "${data.updatedAt}"`)
+      }
+
       const doc = await col.findOneAndUpdate(
         { userId },
         {
           $set: {
             completedPeakIds: data.completedPeakIds,
-            updatedAt: new Date(data.updatedAt),
+            updatedAt,
           },
           $inc: { version: 1 },
         },

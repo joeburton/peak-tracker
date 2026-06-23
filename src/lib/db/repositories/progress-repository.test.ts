@@ -98,6 +98,16 @@ describe('ProgressRepository.findByUserId', () => {
     expect(result!.dirty).toBe(false)
   })
 
+  it('defaults completedPeakIds to [] when the field is absent from the document', async () => {
+    const docWithoutPeakIds = { userId: 'user-123', updatedAt: testDate, version: 1 }
+    mockFindOne.mockResolvedValue(docWithoutPeakIds)
+    const repo = createProgressRepository(mockDb)
+
+    const result = await repo.findByUserId('user-123')
+
+    expect(result!.completedPeakIds).toEqual([])
+  })
+
   it('never includes dirty in the MongoDB projection', async () => {
     mockFindOne.mockResolvedValue(null)
     const repo = createProgressRepository(mockDb)
@@ -179,5 +189,15 @@ describe('ProgressRepository.upsert', () => {
     await expect(repo.upsert('user-123', update)).rejects.toThrow(
       'Failed to upsert progress for userId: user-123',
     )
+  })
+
+  it('throws before writing to MongoDB when updatedAt is not a valid date string', async () => {
+    const repo = createProgressRepository(mockDb)
+
+    await expect(
+      repo.upsert('user-123', { completedPeakIds: ['peak-1'], updatedAt: 'not-a-date' }),
+    ).rejects.toThrow('Invalid updatedAt value: "not-a-date"')
+
+    expect(mockFindOneAndUpdate).not.toHaveBeenCalled()
   })
 })
