@@ -2,7 +2,19 @@ import type { Collection, Db, ObjectId } from 'mongodb'
 import type { Peak } from '@/lib/types/domain'
 import { COLLECTIONS } from '@/lib/db/collections'
 
-type PeakDoc = Omit<Peak, 'id'> & { _id: ObjectId | string }
+interface PeakDocument {
+  _id: ObjectId | string
+  peakListSlug: string
+  slug: string
+  name: string
+  region: string
+  heightMetres: number
+  heightFeet: number
+  latitude: number
+  longitude: number
+  createdAt: Date
+  updatedAt: Date
+}
 
 const PROJECTION = {
   _id: 1,
@@ -18,7 +30,7 @@ const PROJECTION = {
   updatedAt: 1,
 } as const
 
-function toModel(doc: PeakDoc): Peak {
+function toModel(doc: PeakDocument): Peak {
   return {
     id: String(doc._id),
     peakListSlug: doc.peakListSlug,
@@ -29,8 +41,8 @@ function toModel(doc: PeakDoc): Peak {
     heightFeet: doc.heightFeet,
     latitude: doc.latitude,
     longitude: doc.longitude,
-    createdAt: doc.createdAt,
-    updatedAt: doc.updatedAt,
+    createdAt: doc.createdAt.toISOString(),
+    updatedAt: doc.updatedAt.toISOString(),
   }
 }
 
@@ -41,7 +53,7 @@ export interface IPeakRepository {
 }
 
 export function createPeakRepository(db: Db): IPeakRepository {
-  const col: Collection<PeakDoc> = db.collection(COLLECTIONS.peaks)
+  const col: Collection<PeakDocument> = db.collection(COLLECTIONS.peaks)
 
   return {
     async findByListSlug(peakListSlug: string): Promise<Peak[]> {

@@ -20,7 +20,11 @@ beforeEach(() => {
   mockFind.mockClear()
 })
 
-const basePeak = {
+// Document fixtures — what MongoDB returns (Date objects for timestamps)
+const testDate = new Date('2024-01-01T00:00:00.000Z')
+const testDateStr = testDate.toISOString()
+
+const baseDoc = {
   peakListSlug: 'wainwrights',
   slug: 'scafell-pike',
   name: 'Scafell Pike',
@@ -29,14 +33,28 @@ const basePeak = {
   heightFeet: 3209,
   latitude: 54.4541,
   longitude: -3.2112,
-  createdAt: '2024-01-01T00:00:00.000Z',
-  updatedAt: '2024-01-01T00:00:00.000Z',
+  createdAt: testDate,
+  updatedAt: testDate,
 }
 
-const doc1 = { _id: 'aaa', ...basePeak }
+// Model fixtures — what toModel() returns (ISO strings for timestamps)
+const baseModel = {
+  peakListSlug: 'wainwrights',
+  slug: 'scafell-pike',
+  name: 'Scafell Pike',
+  region: 'Southern Fells',
+  heightMetres: 978,
+  heightFeet: 3209,
+  latitude: 54.4541,
+  longitude: -3.2112,
+  createdAt: testDateStr,
+  updatedAt: testDateStr,
+}
+
+const doc1 = { _id: 'aaa', ...baseDoc }
 const doc2 = {
   _id: 'bbb',
-  ...basePeak,
+  ...baseDoc,
   slug: 'helvellyn',
   name: 'Helvellyn',
   region: 'Eastern Fells',
@@ -46,7 +64,7 @@ const doc2 = {
 
 // ObjectId-like — confirms String() calls .toString() on the real driver type
 const mockObjectId = { toString: () => 'objectid-hex' } as unknown as ObjectId
-const docWithObjectId = { _id: mockObjectId, ...basePeak }
+const docWithObjectId = { _id: mockObjectId, ...baseDoc }
 
 const EXPECTED_PROJECTION = {
   _id: 1,
@@ -70,15 +88,23 @@ describe('PeakRepository', () => {
 })
 
 describe('PeakRepository.findByListSlug', () => {
-  it('returns all peaks for a list', async () => {
+  it('returns all peaks for a list mapped to Peak models', async () => {
     mockToArray.mockResolvedValue([doc1, doc2])
     const repo = createPeakRepository(mockDb)
 
     const result = await repo.findByListSlug('wainwrights')
 
     expect(result).toHaveLength(2)
-    expect(result[0]).toEqual({ id: 'aaa', ...basePeak })
-    expect(result[1]).toEqual({ id: 'bbb', ...basePeak, slug: 'helvellyn', name: 'Helvellyn', region: 'Eastern Fells', heightMetres: 950, heightFeet: 3117 })
+    expect(result[0]).toEqual({ id: 'aaa', ...baseModel })
+    expect(result[1]).toEqual({
+      id: 'bbb',
+      ...baseModel,
+      slug: 'helvellyn',
+      name: 'Helvellyn',
+      region: 'Eastern Fells',
+      heightMetres: 950,
+      heightFeet: 3117,
+    })
   })
 
   it('returns an empty array when no peaks match the list slug', async () => {
@@ -102,14 +128,17 @@ describe('PeakRepository.findByListSlug', () => {
     )
   })
 
-  it('calls toString() on an ObjectId _id', async () => {
+  it('maps ObjectId _id to string and converts Date timestamps to ISO strings', async () => {
     mockToArray.mockResolvedValue([docWithObjectId])
     const repo = createPeakRepository(mockDb)
 
     const result = await repo.findByListSlug('wainwrights')
+    const peak = result[0]!
 
-    expect(result[0]!.id).toBe('objectid-hex')
-    expect(result[0]).not.toHaveProperty('_id')
+    expect(peak.id).toBe('objectid-hex')
+    expect(peak.createdAt).toBe(testDateStr)
+    expect(peak.updatedAt).toBe(testDateStr)
+    expect(peak).not.toHaveProperty('_id')
   })
 })
 
@@ -124,7 +153,7 @@ describe('PeakRepository.findBySlug', () => {
       { slug: 'scafell-pike' },
       { projection: EXPECTED_PROJECTION },
     )
-    expect(result).toEqual({ id: 'aaa', ...basePeak })
+    expect(result).toEqual({ id: 'aaa', ...baseModel })
   })
 
   it('returns null when no peak matches the slug', async () => {
@@ -136,23 +165,16 @@ describe('PeakRepository.findBySlug', () => {
     expect(result).toBeNull()
   })
 
-  it('maps _id to id and excludes _id from the result', async () => {
-    mockFindOne.mockResolvedValue(doc1)
-    const repo = createPeakRepository(mockDb)
-
-    const result = await repo.findBySlug('scafell-pike')
-
-    expect(result!.id).toBe('aaa')
-    expect(result).not.toHaveProperty('_id')
-  })
-
-  it('calls toString() on an ObjectId _id', async () => {
+  it('maps _id to id, converts Date timestamps to ISO strings, excludes _id', async () => {
     mockFindOne.mockResolvedValue(docWithObjectId)
     const repo = createPeakRepository(mockDb)
 
     const result = await repo.findBySlug('scafell-pike')
 
     expect(result!.id).toBe('objectid-hex')
+    expect(result!.createdAt).toBe(testDateStr)
+    expect(result!.updatedAt).toBe(testDateStr)
+    expect(result).not.toHaveProperty('_id')
   })
 })
 
@@ -164,7 +186,7 @@ describe('PeakRepository.findByRegion', () => {
     const result = await repo.findByRegion('wainwrights', 'Southern Fells')
 
     expect(result).toHaveLength(1)
-    expect(result[0]!.region).toBe('Southern Fells')
+    expect(result[0]).toEqual({ id: 'aaa', ...baseModel })
   })
 
   it('returns an empty array when no peaks match', async () => {
@@ -186,15 +208,5 @@ describe('PeakRepository.findByRegion', () => {
       { peakListSlug: 'wainwrights', region: 'Southern Fells' },
       { projection: EXPECTED_PROJECTION },
     )
-  })
-
-  it('does not return peaks from a different region', async () => {
-    mockToArray.mockResolvedValue([doc2])
-    const repo = createPeakRepository(mockDb)
-
-    const result = await repo.findByRegion('wainwrights', 'Eastern Fells')
-
-    expect(result[0]!.region).toBe('Eastern Fells')
-    expect(result.some(p => p.region === 'Southern Fells')).toBe(false)
   })
 })
