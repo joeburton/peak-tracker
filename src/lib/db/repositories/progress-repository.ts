@@ -1,4 +1,5 @@
 import type { Collection, Db, ObjectId } from 'mongodb'
+import { UserProgressSchema } from '@/lib/validation/schemas'
 import type { UserProgress } from '@/lib/types/domain'
 import { COLLECTIONS } from '@/lib/db/collections'
 
@@ -27,12 +28,12 @@ const PROJECTION = {
 } as const
 
 function toModel(doc: ProgressDocument): UserProgress {
-  return {
+  return UserProgressSchema.parse({
     userId: doc.userId,
     completedPeakIds: doc.completedPeakIds ?? [],
     updatedAt: doc.updatedAt.toISOString(),
     version: doc.version,
-  }
+  })
 }
 
 export interface IProgressRepository {
