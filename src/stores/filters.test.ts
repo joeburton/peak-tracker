@@ -50,6 +50,12 @@ describe('setRegionFilter()', () => {
     expect(useFiltersStore.getState().regionFilter).toBeNull()
   })
 
+  it('normalises empty string to null — prevents empty string being treated as an active filter', () => {
+    useFiltersStore.getState().setRegionFilter('Eastern Fells')
+    useFiltersStore.getState().setRegionFilter('')
+    expect(useFiltersStore.getState().regionFilter).toBeNull()
+  })
+
   it('does not affect completionFilter', () => {
     useFiltersStore.getState().setCompletionFilter('incomplete')
     useFiltersStore.getState().setRegionFilter('Eastern Fells')
@@ -95,14 +101,14 @@ describe('useResetFiltersOnMount()', () => {
     expect(useFiltersStore.getState().regionFilter).toBeNull()
   })
 
-  it('resets filters on unmount — clears state before navigation', () => {
+  it('does not reset filters on unmount — StrictMode cleanup would wipe programmatically-set filters', () => {
     const { unmount } = renderHook(() => useResetFiltersOnMount())
     useFiltersStore.getState().setCompletionFilter('incomplete')
     useFiltersStore.getState().setRegionFilter('Western Fells')
 
     unmount()
 
-    expect(useFiltersStore.getState().completionFilter).toBe('all')
-    expect(useFiltersStore.getState().regionFilter).toBeNull()
+    expect(useFiltersStore.getState().completionFilter).toBe('incomplete')
+    expect(useFiltersStore.getState().regionFilter).toBe('Western Fells')
   })
 })
