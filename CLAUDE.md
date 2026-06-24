@@ -735,6 +735,15 @@ src/
 │   ├── schema.ts
 │   └── repositories/
 │
+├── stores/                             # Zustand stores — one file per concern
+│   ├── search.ts
+│   ├── filters.ts
+│   ├── sort.ts
+│   ├── ui-preferences.ts
+│   ├── connectivity.ts
+│   ├── sync.ts
+│   └── progress.ts
+│
 └── lib/
     ├── db/
     ├── queryKeys.ts
