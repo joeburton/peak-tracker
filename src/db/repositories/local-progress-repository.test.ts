@@ -89,6 +89,16 @@ describe('upsert()', () => {
     const result = await repo.get('user-123')
     expect(result?.version).toBe(DATA.version)
   })
+
+  it('stores records for different users independently', async () => {
+    const dataA: LocalProgressData = { completedPeakIds: ['peak-1'], updatedAt: '2024-06-01T00:00:00.000Z', version: 1 }
+    const dataB: LocalProgressData = { completedPeakIds: ['peak-1', 'peak-2', 'peak-3'], updatedAt: '2024-06-02T00:00:00.000Z', version: 5 }
+    await repo.upsert('user-aaa', dataA)
+    await repo.upsert('user-bbb', dataB)
+    expect((await repo.get('user-aaa'))?.completedPeakIds).toHaveLength(1)
+    expect((await repo.get('user-bbb'))?.completedPeakIds).toHaveLength(3)
+    expect((await repo.get('user-bbb'))?.version).toBe(5)
+  })
 })
 
 // ── markDirty() ───────────────────────────────────────────────────────────────
@@ -111,6 +121,21 @@ describe('markDirty()', () => {
     await repo.markDirty('user-123')
     await repo.markDirty('user-123')
     expect((await repo.get('user-123'))?.dirty).toBe(true)
+  })
+
+  it('does not change completedPeakIds or version', async () => {
+    await repo.upsert('user-123', DATA)
+    await repo.markDirty('user-123')
+    const result = await repo.get('user-123')
+    expect(result?.completedPeakIds).toEqual(DATA.completedPeakIds)
+    expect(result?.version).toBe(DATA.version)
+  })
+
+  it('only marks the target user dirty — other users are unaffected', async () => {
+    await repo.upsert('user-aaa', DATA)
+    await repo.upsert('user-bbb', DATA)
+    await repo.markDirty('user-aaa')
+    expect((await repo.get('user-bbb'))?.dirty).toBe(false)
   })
 })
 
@@ -139,5 +164,22 @@ describe('markClean()', () => {
     await repo.markClean('user-123', '2024-06-02T12:00:00.000Z')
 
     expect((await repo.get('user-123'))?.lastSyncedAt).toBe('2024-06-02T12:00:00.000Z')
+  })
+
+  it('does not change completedPeakIds or version', async () => {
+    await repo.upsert('user-123', DATA)
+    await repo.markClean('user-123', '2024-06-01T12:00:00.000Z')
+    const result = await repo.get('user-123')
+    expect(result?.completedPeakIds).toEqual(DATA.completedPeakIds)
+    expect(result?.version).toBe(DATA.version)
+  })
+
+  it('only marks the target user clean — other users are unaffected', async () => {
+    await repo.upsert('user-aaa', DATA)
+    await repo.upsert('user-bbb', DATA)
+    await repo.markDirty('user-aaa')
+    await repo.markDirty('user-bbb')
+    await repo.markClean('user-aaa', '2024-06-01T12:00:00.000Z')
+    expect((await repo.get('user-bbb'))?.dirty).toBe(true)
   })
 })
