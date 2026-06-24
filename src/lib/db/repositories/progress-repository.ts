@@ -39,6 +39,7 @@ function toModel(doc: ProgressDocument): UserProgress {
 export interface IProgressRepository {
   findByUserId(userId: string): Promise<UserProgress | null>
   upsert(userId: string, data: ProgressUpdate): Promise<UserProgress>
+  restore(progress: UserProgress): Promise<UserProgress>
 }
 
 export function createProgressRepository(db: Db): IProgressRepository {
@@ -68,6 +69,27 @@ export function createProgressRepository(db: Db): IProgressRepository {
         { upsert: true, returnDocument: 'after', projection: PROJECTION },
       )
       if (!doc) throw new Error(`Failed to upsert progress for userId: ${userId}`)
+      return toModel(doc)
+    },
+
+    async restore(progress: UserProgress): Promise<UserProgress> {
+      const updatedAt = new Date(progress.updatedAt)
+      if (isNaN(updatedAt.getTime())) {
+        throw new Error(`Invalid updatedAt value: "${progress.updatedAt}"`)
+      }
+
+      const doc = await col.findOneAndUpdate(
+        { userId: progress.userId },
+        {
+          $set: {
+            completedPeakIds: progress.completedPeakIds,
+            updatedAt,
+            version: progress.version,
+          },
+        },
+        { upsert: true, returnDocument: 'after', projection: PROJECTION },
+      )
+      if (!doc) throw new Error(`Failed to restore progress for userId: ${progress.userId}`)
       return toModel(doc)
     },
   }
