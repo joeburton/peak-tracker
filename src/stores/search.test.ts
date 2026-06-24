@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { useSearchStore, DEBOUNCE_MS } from './search'
+import { renderHook } from '@testing-library/react'
+import { useSearchStore, useResetSearchOnMount, DEBOUNCE_MS } from './search'
 
 beforeEach(() => {
   vi.useFakeTimers()
@@ -42,10 +43,8 @@ describe('setSearchTerm()', () => {
     useSearchStore.getState().setSearchTerm('first')
     vi.advanceTimersByTime(DEBOUNCE_MS - 1)
     useSearchStore.getState().setSearchTerm('second')
-    // 'first' timer was cancelled — advancing original delay should not propagate 'first'
     vi.advanceTimersByTime(DEBOUNCE_MS - 1)
     expect(useSearchStore.getState().debouncedSearchTerm).toBe('')
-    // Full delay from the second call does propagate 'second'
     vi.advanceTimersByTime(1)
     expect(useSearchStore.getState().debouncedSearchTerm).toBe('second')
   })
@@ -56,6 +55,23 @@ describe('setSearchTerm()', () => {
     useSearchStore.getState().setSearchTerm('')
     vi.advanceTimersByTime(DEBOUNCE_MS)
     expect(useSearchStore.getState().debouncedSearchTerm).toBe('')
+  })
+
+  it('preserves raw searchTerm including leading/trailing spaces', () => {
+    useSearchStore.getState().setSearchTerm('  wainwright  ')
+    expect(useSearchStore.getState().searchTerm).toBe('  wainwright  ')
+  })
+
+  it('trims debouncedSearchTerm — whitespace-only input resolves to empty string', () => {
+    useSearchStore.getState().setSearchTerm('   ')
+    vi.advanceTimersByTime(DEBOUNCE_MS)
+    expect(useSearchStore.getState().debouncedSearchTerm).toBe('')
+  })
+
+  it('trims leading and trailing whitespace from debouncedSearchTerm', () => {
+    useSearchStore.getState().setSearchTerm('  wainwright  ')
+    vi.advanceTimersByTime(DEBOUNCE_MS)
+    expect(useSearchStore.getState().debouncedSearchTerm).toBe('wainwright')
   })
 })
 
@@ -73,6 +89,30 @@ describe('reset()', () => {
   it('cancels a pending debounce — debouncedSearchTerm stays empty after reset', () => {
     useSearchStore.getState().setSearchTerm('wainwright')
     useSearchStore.getState().reset()
+    vi.advanceTimersByTime(DEBOUNCE_MS)
+    expect(useSearchStore.getState().debouncedSearchTerm).toBe('')
+  })
+})
+
+// ── useResetSearchOnMount() ───────────────────────────────────────────────────
+
+describe('useResetSearchOnMount()', () => {
+  it('resets the store on mount — clears state left from a previous page', () => {
+    useSearchStore.getState().setSearchTerm('stale term')
+    vi.advanceTimersByTime(DEBOUNCE_MS)
+
+    renderHook(() => useResetSearchOnMount())
+
+    expect(useSearchStore.getState().searchTerm).toBe('')
+    expect(useSearchStore.getState().debouncedSearchTerm).toBe('')
+  })
+
+  it('resets the store on unmount — cancels any in-flight debounce before navigation', () => {
+    const { unmount } = renderHook(() => useResetSearchOnMount())
+
+    useSearchStore.getState().setSearchTerm('typed mid-navigation')
+    unmount()
+
     vi.advanceTimersByTime(DEBOUNCE_MS)
     expect(useSearchStore.getState().debouncedSearchTerm).toBe('')
   })
