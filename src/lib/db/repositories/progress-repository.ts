@@ -78,18 +78,18 @@ export function createProgressRepository(db: Db): IProgressRepository {
         throw new Error(`Invalid updatedAt value: "${progress.updatedAt}"`)
       }
 
+      // Destructure only MongoDB-safe fields — explicitly excludes dirty and any
+      // other client-only fields present when a LocalProgress is cast to UserProgress
+      const { userId, completedPeakIds, version } = progress
+
       const doc = await col.findOneAndUpdate(
-        { userId: progress.userId },
+        { userId },
         {
-          $set: {
-            completedPeakIds: progress.completedPeakIds,
-            updatedAt,
-            version: progress.version,
-          },
+          $set: { completedPeakIds, updatedAt, version },
         },
         { upsert: true, returnDocument: 'after', projection: PROJECTION },
       )
-      if (!doc) throw new Error(`Failed to restore progress for userId: ${progress.userId}`)
+      if (!doc) throw new Error(`Failed to restore progress for userId: ${userId}`)
       return toModel(doc)
     },
   }
