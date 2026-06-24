@@ -15,15 +15,25 @@ export class PeakTrackerDb extends Dexie {
       progress: 'userId, dirty',
     })
 
-    this.version(2).stores({
-      // Non-destructive: only adds the userPreferences table; progress is unchanged
-      userPreferences: 'userId',
-    })
+    this.version(2)
+      .stores({
+        // Non-destructive: only adds the userPreferences table; progress is unchanged
+        userPreferences: 'userId',
+      })
+      .upgrade(() => {
+        // Additive migration — Dexie creates the userPreferences table from the
+        // stores() definition above. No existing records need to be transformed.
+      })
 
-    this.version(3).stores({
-      // Non-destructive: only adds the syncMetadata table; prior tables are unchanged
-      syncMetadata: 'id',
-    })
+    this.version(3)
+      .stores({
+        // Non-destructive: only adds the syncMetadata table; prior tables are unchanged
+        syncMetadata: 'id',
+      })
+      .upgrade(() => {
+        // Additive migration — Dexie creates the syncMetadata table from the
+        // stores() definition above. No existing records need to be transformed.
+      })
   }
 }
 
