@@ -6,6 +6,7 @@ interface SearchState {
   searchTerm: string
   debouncedSearchTerm: string
   setSearchTerm: (term: string) => void
+  // Call reset() on mount/unmount — singleton state persists across navigation without it
   reset: () => void
 }
 
