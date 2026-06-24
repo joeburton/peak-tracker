@@ -1,4 +1,4 @@
-export { PeakListSchema, PeakSchema, UserProgressSchema } from './schemas'
+export { PeakListSchema, PeakSchema, UserProgressSchema, CompletionFilterSchema } from './schemas'
 export type {
   PeakList,
   Peak,

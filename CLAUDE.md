@@ -570,19 +570,19 @@ Manages ephemeral UI and application state that does not need server persistence
 
 These three stores must be synced with URL search params. This is non-negotiable — it provides browser history, page-refresh persistence, and shareable links.
 
-| URL param      | Store                | Field              |
-| -------------- | -------------------- | ------------------ |
-| `?search=`     | Search               | `debouncedSearchTerm` (written after debounce) |
-| `?completion=` | Filters              | `completionFilter` |
-| `?region=`     | Filters              | `regionFilter`     |
-| `?sort=`       | Sort                 | `sortField`        |
-| `?dir=`        | Sort                 | `sortDirection`    |
+| URL param      | Written from           | Read into on mount                            |
+| -------------- | ---------------------- | --------------------------------------------- |
+| `?search=`     | `debouncedSearchTerm`  | `initFromUrl(term)` — sets both fields, cancels orphaned timer |
+| `?completion=` | `completionFilter`     | `setCompletionFilter(value)`                  |
+| `?region=`     | `regionFilter`         | `setRegionFilter(value)`                      |
+| `?sort=`       | `sortField`            | `setSortField(value)`                         |
+| `?dir=`        | `sortDirection`        | `setSortDirection(value)`                     |
 
 **Two-layer contract for Search/Filters/Sort:**
 
-1. **On page mount:** read `useSearchParams()` and call the relevant store setters to initialise from the URL.
-2. **On user interaction:** update the store immediately (instant UI), then sync to the URL via `router.replace` (persistence and history).
-3. **The URL is reset automatically on navigation** — no store reset hooks are needed or allowed for Search, Filters, or Sort.
+1. **On page mount:** read `useSearchParams()` and use the actions in the table above to initialise stores from the URL. For search, always use `initFromUrl()` — not `setSearchTerm()` — so both `searchTerm` and `debouncedSearchTerm` are set immediately without a debounce timer.
+2. **On user interaction:** update the store immediately (instant UI), then sync to the URL via `router.replace` (persistence and history). For search, write `debouncedSearchTerm` to the URL (after the debounce fires), not the raw `searchTerm`.
+3. **The URL is the reset mechanism** — navigating to a new peak list with clean URL params leaves the stores uninitialised until mount; no store reset hooks are needed or allowed for Search, Filters, or Sort.
 
 **`useSearchParams` requires a `<Suspense>` boundary.** Wrap any Client Component that calls `useSearchParams()` in `<Suspense>` in its nearest Server Component ancestor.
 

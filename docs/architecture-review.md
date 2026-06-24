@@ -114,20 +114,20 @@ The application must work fully offline, be installable on mobile devices, and s
 
 Filter, search, and sort state must be synced with URL search params. This is the correct Next.js App Router pattern — it provides browser history integration, page-refresh persistence, and shareable links at no extra cost.
 
-| URL param      | Store field            | Example                        |
-| -------------- | ---------------------- | ------------------------------ |
-| `?search=`     | `searchTerm`           | `?search=scafell`              |
-| `?completion=` | `completionFilter`     | `?completion=incomplete`       |
-| `?region=`     | `regionFilter`         | `?region=Eastern+Fells`        |
-| `?sort=`       | `sortField`            | `?sort=heightMetres`           |
-| `?dir=`        | `sortDirection`        | `?dir=desc`                    |
+| URL param      | Written from                | Read into (on mount)                        | Example                        |
+| -------------- | --------------------------- | ------------------------------------------- | ------------------------------ |
+| `?search=`     | `debouncedSearchTerm`       | `initFromUrl(term)` — sets both fields      | `?search=scafell`              |
+| `?completion=` | `completionFilter`          | `setCompletionFilter(value)`                | `?completion=incomplete`       |
+| `?region=`     | `regionFilter`              | `setRegionFilter(value)`                    | `?region=Eastern+Fells`        |
+| `?sort=`       | `sortField`                 | `setSortField(value)`                       | `?sort=heightMetres`           |
+| `?dir=`        | `sortDirection`             | `setSortDirection(value)`                   | `?dir=desc`                    |
 
 **Two-layer contract:**
 
-1. **URL is the source of truth.** On mount, the page reads `useSearchParams()` and calls the relevant store setters to initialise in-memory state from the URL.
+1. **URL is the source of truth.** On mount, the page reads `useSearchParams()` and initialises the stores from URL params (see table above).
 2. **Zustand is the in-memory reactive layer.** Components subscribe to stores for fast, synchronous reads and to avoid prop drilling. On user interaction, the component updates the store immediately (for instant UI response) and syncs to the URL via `router.replace` (for persistence and history).
 
-**Search debounce and URL:** The URL is updated with the *debounced* value only (after 300ms), not on every keystroke. `debouncedSearchTerm` drives both the filter logic and the URL write.
+**Search debounce and URL:** The URL is updated with the *debounced* value only — `debouncedSearchTerm` — not on every keystroke. On mount, use `initFromUrl(term)` rather than `setSearchTerm(term)`: this sets both `searchTerm` (input display) and `debouncedSearchTerm` (filter driver) immediately without starting a debounce timer, and cancels any orphaned timer from a previous page.
 
 **`useSearchParams` requires a Suspense boundary.** Any Client Component calling `useSearchParams()` must be wrapped in `<Suspense>` in its nearest Server Component ancestor. The peak list page (`/peak-lists/[slug]/page.tsx`) must account for this in its layout.
 

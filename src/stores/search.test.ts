@@ -92,3 +92,35 @@ describe('reset()', () => {
     expect(useSearchStore.getState().debouncedSearchTerm).toBe('')
   })
 })
+
+// ── initFromUrl() ─────────────────────────────────────────────────────────────
+
+describe('initFromUrl()', () => {
+  it('sets both searchTerm and debouncedSearchTerm immediately', () => {
+    useSearchStore.getState().initFromUrl('scafell')
+    expect(useSearchStore.getState().searchTerm).toBe('scafell')
+    expect(useSearchStore.getState().debouncedSearchTerm).toBe('scafell')
+  })
+
+  it('trims the value before setting both fields', () => {
+    useSearchStore.getState().initFromUrl('  scafell  ')
+    expect(useSearchStore.getState().searchTerm).toBe('scafell')
+    expect(useSearchStore.getState().debouncedSearchTerm).toBe('scafell')
+  })
+
+  it('cancels any orphaned in-flight debounce from the previous page', () => {
+    useSearchStore.getState().setSearchTerm('stale')
+    useSearchStore.getState().initFromUrl('scafell')
+    vi.advanceTimersByTime(DEBOUNCE_MS)
+    // Stale timer must not overwrite after initFromUrl
+    expect(useSearchStore.getState().debouncedSearchTerm).toBe('scafell')
+  })
+
+  it('sets both fields to empty string when called with empty string', () => {
+    useSearchStore.getState().setSearchTerm('wainwright')
+    vi.advanceTimersByTime(DEBOUNCE_MS)
+    useSearchStore.getState().initFromUrl('')
+    expect(useSearchStore.getState().searchTerm).toBe('')
+    expect(useSearchStore.getState().debouncedSearchTerm).toBe('')
+  })
+})

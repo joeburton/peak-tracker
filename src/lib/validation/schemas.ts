@@ -50,4 +50,5 @@ export interface PeakListStatistics {
   byRegion: RegionalStatistics[]
 }
 
-export type CompletionFilter = 'all' | 'complete' | 'incomplete'
+export const CompletionFilterSchema = z.enum(['all', 'complete', 'incomplete'])
+export type CompletionFilter = z.infer<typeof CompletionFilterSchema>
