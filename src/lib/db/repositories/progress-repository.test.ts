@@ -182,3 +182,65 @@ describe('ProgressRepository.upsert', () => {
     expect(mockFindOneAndUpdate).not.toHaveBeenCalled()
   })
 })
+
+describe('ProgressRepository.restore', () => {
+  it('sets completedPeakIds, updatedAt, and version directly without $inc', async () => {
+    mockFindOneAndUpdate.mockResolvedValue(progressDoc)
+    const repo = createProgressRepository(mockDb)
+
+    await repo.restore(progressModel)
+
+    const [, updateArg] = mockFindOneAndUpdate.mock.calls[0]!
+    expect(updateArg.$set.completedPeakIds).toEqual(progressModel.completedPeakIds)
+    expect(updateArg.$set.updatedAt).toBeInstanceOf(Date)
+    expect(updateArg.$set.version).toBe(progressModel.version)
+    expect(updateArg).not.toHaveProperty('$inc')
+  })
+
+  it('uses upsert: true and returnDocument: after', async () => {
+    mockFindOneAndUpdate.mockResolvedValue(progressDoc)
+    const repo = createProgressRepository(mockDb)
+
+    await repo.restore(progressModel)
+
+    const [, , options] = mockFindOneAndUpdate.mock.calls[0]!
+    expect(options.upsert).toBe(true)
+    expect(options.returnDocument).toBe('after')
+  })
+
+  it('returns the restored progress model', async () => {
+    mockFindOneAndUpdate.mockResolvedValue(progressDoc)
+    const repo = createProgressRepository(mockDb)
+
+    const result = await repo.restore(progressModel)
+
+    expect(result).toEqual(progressModel)
+  })
+
+  it('throws if the operation returns no document', async () => {
+    mockFindOneAndUpdate.mockResolvedValue(null)
+    const repo = createProgressRepository(mockDb)
+
+    await expect(repo.restore(progressModel)).rejects.toThrow(
+      'Failed to restore progress for userId: user-123',
+    )
+  })
+
+  it('throws before writing when updatedAt is not a valid date string', async () => {
+    const repo = createProgressRepository(mockDb)
+    const invalid = { ...progressModel, updatedAt: 'not-a-date' }
+
+    await expect(repo.restore(invalid)).rejects.toThrow('Invalid updatedAt value: "not-a-date"')
+    expect(mockFindOneAndUpdate).not.toHaveBeenCalled()
+  })
+
+  it('never writes dirty to MongoDB', async () => {
+    mockFindOneAndUpdate.mockResolvedValue(progressDoc)
+    const repo = createProgressRepository(mockDb)
+
+    await repo.restore(progressModel)
+
+    const [, updateArg] = mockFindOneAndUpdate.mock.calls[0]!
+    expect(updateArg.$set).not.toHaveProperty('dirty')
+  })
+})
