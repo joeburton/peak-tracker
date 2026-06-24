@@ -8,3 +8,12 @@ export interface LocalProgress {
   dirty: boolean // true = has unsynced local changes; never persisted to MongoDB
   version: number
 }
+
+// LocalUserPreferences holds syncable user preferences — settings that should
+// follow the user across devices (e.g. units).
+// Device-local UI state (theme, viewMode, sidebar) is handled by Zustand persist,
+// not stored here.
+export interface LocalUserPreferences {
+  userId: string // Clerk userId — primary key
+  units: 'metric' | 'imperial'
+}

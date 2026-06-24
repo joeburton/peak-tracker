@@ -1,8 +1,9 @@
 import Dexie, { type EntityTable } from 'dexie'
-import type { LocalProgress } from './schema'
+import type { LocalProgress, LocalUserPreferences } from './schema'
 
 export class PeakTrackerDb extends Dexie {
   progress!: EntityTable<LocalProgress, 'userId'>
+  userPreferences!: EntityTable<LocalUserPreferences, 'userId'>
 
   constructor() {
     super('peakTracker')
@@ -11,6 +12,11 @@ export class PeakTrackerDb extends Dexie {
       // userId: primary key
       // dirty: indexed — enables efficient sync queries (find all unsynced records)
       progress: 'userId, dirty',
+    })
+
+    this.version(2).stores({
+      // Non-destructive: only adds the userPreferences table; progress is unchanged
+      userPreferences: 'userId',
     })
   }
 }
