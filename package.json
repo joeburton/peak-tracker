@@ -17,7 +17,15 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage --passWithNoTests",
     "test:e2e": "playwright test",
-    "create-indexes": "tsx scripts/create-indexes.ts"
+    "create-indexes": "tsx scripts/create-indexes.ts",
+    "seed:peak-lists": "tsx scripts/seed-peak-lists.ts",
+    "seed:wainwrights": "tsx scripts/seed-wainwrights.ts",
+    "seed:munros": "tsx scripts/seed-munros.ts",
+    "seed": "npm run seed:peak-lists && npm run seed:wainwrights && npm run seed:munros",
+    "verify-seed": "tsx scripts/verify-seed.ts",
+    "reset-db": "tsx scripts/reset-db.ts",
+    "export-progress": "tsx scripts/export-progress.ts",
+    "import-progress": "tsx scripts/import-progress.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.5.7",
