@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { renderHook } from '@testing-library/react'
-import { useSearchStore, useResetSearchOnMount, DEBOUNCE_MS } from './search'
+import { useSearchStore, DEBOUNCE_MS } from './search'
 
 beforeEach(() => {
   vi.useFakeTimers()
@@ -89,30 +88,6 @@ describe('reset()', () => {
   it('cancels a pending debounce — debouncedSearchTerm stays empty after reset', () => {
     useSearchStore.getState().setSearchTerm('wainwright')
     useSearchStore.getState().reset()
-    vi.advanceTimersByTime(DEBOUNCE_MS)
-    expect(useSearchStore.getState().debouncedSearchTerm).toBe('')
-  })
-})
-
-// ── useResetSearchOnMount() ───────────────────────────────────────────────────
-
-describe('useResetSearchOnMount()', () => {
-  it('resets the store on mount — clears state left from a previous page', () => {
-    useSearchStore.getState().setSearchTerm('stale term')
-    vi.advanceTimersByTime(DEBOUNCE_MS)
-
-    renderHook(() => useResetSearchOnMount())
-
-    expect(useSearchStore.getState().searchTerm).toBe('')
-    expect(useSearchStore.getState().debouncedSearchTerm).toBe('')
-  })
-
-  it('resets the store on unmount — cancels any in-flight debounce before navigation', () => {
-    const { unmount } = renderHook(() => useResetSearchOnMount())
-
-    useSearchStore.getState().setSearchTerm('typed mid-navigation')
-    unmount()
-
     vi.advanceTimersByTime(DEBOUNCE_MS)
     expect(useSearchStore.getState().debouncedSearchTerm).toBe('')
   })

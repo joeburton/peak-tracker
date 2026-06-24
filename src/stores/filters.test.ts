@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { renderHook } from '@testing-library/react'
 import type { CompletionFilter } from '@/lib/types/domain'
-import { useFiltersStore, useResetFiltersOnMount } from './filters'
+import { useFiltersStore } from './filters'
 
 beforeEach(() => {
   useFiltersStore.getState().resetFilters()
@@ -97,42 +96,5 @@ describe('resetFilters()', () => {
     const { completionFilter, regionFilter } = useFiltersStore.getState()
     expect(completionFilter).toBe('all')
     expect(regionFilter).toBeNull()
-  })
-})
-
-// ── useResetFiltersOnMount() ───────────────────────────────────────────────────
-
-describe('useResetFiltersOnMount()', () => {
-  it('resets filters on mount — clears state left from a previous page', () => {
-    useFiltersStore.getState().setCompletionFilter('complete')
-    useFiltersStore.getState().setRegionFilter('Eastern Fells')
-
-    renderHook(() => useResetFiltersOnMount())
-
-    expect(useFiltersStore.getState().completionFilter).toBe('all')
-    expect(useFiltersStore.getState().regionFilter).toBeNull()
-  })
-
-  it('does not reset filters on unmount — state survives until next page mounts', () => {
-    const { unmount } = renderHook(() => useResetFiltersOnMount())
-    useFiltersStore.getState().setCompletionFilter('incomplete')
-    useFiltersStore.getState().setRegionFilter('Western Fells')
-
-    unmount()
-
-    expect(useFiltersStore.getState().completionFilter).toBe('incomplete')
-    expect(useFiltersStore.getState().regionFilter).toBe('Western Fells')
-  })
-
-  it('resets exactly once — state set programmatically after mount is not wiped on remount', () => {
-    const { rerender } = renderHook(() => useResetFiltersOnMount())
-
-    useFiltersStore.getState().setCompletionFilter('complete')
-    useFiltersStore.getState().setRegionFilter('Eastern Fells')
-
-    rerender()
-
-    expect(useFiltersStore.getState().completionFilter).toBe('complete')
-    expect(useFiltersStore.getState().regionFilter).toBe('Eastern Fells')
   })
 })

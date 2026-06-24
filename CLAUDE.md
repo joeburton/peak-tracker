@@ -566,6 +566,26 @@ Manages ephemeral UI and application state that does not need server persistence
 - Use `persist` middleware only where explicitly specified
 - Connectivity and sync state must stay consistent with Dexie and TanStack Query
 
+**URL search params as source of truth for Search, Filters, and Sort:**
+
+These three stores must be synced with URL search params. This is non-negotiable — it provides browser history, page-refresh persistence, and shareable links.
+
+| URL param      | Store                | Field              |
+| -------------- | -------------------- | ------------------ |
+| `?search=`     | Search               | `debouncedSearchTerm` (written after debounce) |
+| `?completion=` | Filters              | `completionFilter` |
+| `?region=`     | Filters              | `regionFilter`     |
+| `?sort=`       | Sort                 | `sortField`        |
+| `?dir=`        | Sort                 | `sortDirection`    |
+
+**Two-layer contract for Search/Filters/Sort:**
+
+1. **On page mount:** read `useSearchParams()` and call the relevant store setters to initialise from the URL.
+2. **On user interaction:** update the store immediately (instant UI), then sync to the URL via `router.replace` (persistence and history).
+3. **The URL is reset automatically on navigation** — no store reset hooks are needed or allowed for Search, Filters, or Sort.
+
+**`useSearchParams` requires a `<Suspense>` boundary.** Wrap any Client Component that calls `useSearchParams()` in `<Suspense>` in its nearest Server Component ancestor.
+
 ---
 
 ### Dexie — Offline Persistence

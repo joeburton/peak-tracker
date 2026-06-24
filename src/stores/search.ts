@@ -1,6 +1,5 @@
 'use client'
 
-import { useEffect } from 'react'
 import { create } from 'zustand'
 
 export const DEBOUNCE_MS = 300
@@ -38,16 +37,3 @@ export const useSearchStore = create<SearchState>((set) => {
     },
   }
 })
-
-// Use in every page that renders a search input. Resets the singleton store on
-// mount (clears state from a previous page) and on unmount (cancels any
-// in-flight debounce timer before navigation completes).
-export function useResetSearchOnMount() {
-  const reset = useSearchStore((s) => s.reset)
-  useEffect(() => {
-    reset()
-    return () => {
-      reset()
-    }
-  }, [reset])
-}

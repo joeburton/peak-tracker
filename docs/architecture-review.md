@@ -110,6 +110,27 @@ The application must work fully offline, be installable on mobile devices, and s
 - Independently testable stores.
 - `persist` middleware used only where explicitly specified.
 
+**URL search params as source of truth for filter/search/sort state:**
+
+Filter, search, and sort state must be synced with URL search params. This is the correct Next.js App Router pattern — it provides browser history integration, page-refresh persistence, and shareable links at no extra cost.
+
+| URL param      | Store field            | Example                        |
+| -------------- | ---------------------- | ------------------------------ |
+| `?search=`     | `searchTerm`           | `?search=scafell`              |
+| `?completion=` | `completionFilter`     | `?completion=incomplete`       |
+| `?region=`     | `regionFilter`         | `?region=Eastern+Fells`        |
+| `?sort=`       | `sortField`            | `?sort=heightMetres`           |
+| `?dir=`        | `sortDirection`        | `?dir=desc`                    |
+
+**Two-layer contract:**
+
+1. **URL is the source of truth.** On mount, the page reads `useSearchParams()` and calls the relevant store setters to initialise in-memory state from the URL.
+2. **Zustand is the in-memory reactive layer.** Components subscribe to stores for fast, synchronous reads and to avoid prop drilling. On user interaction, the component updates the store immediately (for instant UI response) and syncs to the URL via `router.replace` (for persistence and history).
+
+**Search debounce and URL:** The URL is updated with the *debounced* value only (after 300ms), not on every keystroke. `debouncedSearchTerm` drives both the filter logic and the URL write.
+
+**`useSearchParams` requires a Suspense boundary.** Any Client Component calling `useSearchParams()` must be wrapped in `<Suspense>` in its nearest Server Component ancestor. The peak list page (`/peak-lists/[slug]/page.tsx`) must account for this in its layout.
+
 **User preferences split — Zustand vs Dexie:**
 Two layers handle persistence for different reasons:
 
