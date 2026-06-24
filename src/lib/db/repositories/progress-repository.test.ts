@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createProgressRepository, type ProgressUpdate } from './progress-repository'
 import { COLLECTIONS } from '@/lib/db/collections'
+import type { UserProgress } from '@/lib/types/domain'
 import type { Db } from 'mongodb'
 
 const mockFindOne = vi.fn()
@@ -152,6 +153,17 @@ describe('ProgressRepository.upsert', () => {
     expect(updateArg.$inc).not.toHaveProperty('dirty')
   })
 
+  it('strips dirty even when the caller bypasses TypeScript via an unsafe cast', async () => {
+    mockFindOneAndUpdate.mockResolvedValue(progressDoc)
+    const repo = createProgressRepository(mockDb)
+
+    const updateWithDirty = { ...update, dirty: true } as unknown as ProgressUpdate
+    await repo.upsert('user-123', updateWithDirty)
+
+    const [, updateArg] = mockFindOneAndUpdate.mock.calls[0]!
+    expect(updateArg.$set).not.toHaveProperty('dirty')
+  })
+
   it('uses upsert: true and returnDocument: after', async () => {
     mockFindOneAndUpdate.mockResolvedValue(progressDoc)
     const repo = createProgressRepository(mockDb)
@@ -242,5 +254,18 @@ describe('ProgressRepository.restore', () => {
 
     const [, updateArg] = mockFindOneAndUpdate.mock.calls[0]!
     expect(updateArg.$set).not.toHaveProperty('dirty')
+  })
+
+  it('strips dirty when a LocalProgress is cast to UserProgress at runtime', async () => {
+    mockFindOneAndUpdate.mockResolvedValue(progressDoc)
+    const repo = createProgressRepository(mockDb)
+
+    // Simulate the sync engine accidentally passing a LocalProgress as UserProgress
+    const localProgress = { ...progressModel, dirty: true, lastSyncedAt: '2024-06-01T00:00:00.000Z' }
+    await repo.restore(localProgress as unknown as UserProgress)
+
+    const [, updateArg] = mockFindOneAndUpdate.mock.calls[0]!
+    expect(updateArg.$set).not.toHaveProperty('dirty')
+    expect(updateArg.$set).not.toHaveProperty('lastSyncedAt')
   })
 })
