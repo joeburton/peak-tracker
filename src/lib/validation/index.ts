@@ -5,4 +5,5 @@ export type {
   UserProgress,
   PeakListStatistics,
   RegionalStatistics,
+  CompletionFilter,
 } from './schemas'

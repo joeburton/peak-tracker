@@ -49,3 +49,5 @@ export interface PeakListStatistics {
   percentageComplete: number
   byRegion: RegionalStatistics[]
 }
+
+export type CompletionFilter = 'all' | 'complete' | 'incomplete'

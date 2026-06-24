@@ -1,7 +1,10 @@
-import { useEffect } from 'react'
-import { create } from 'zustand'
+'use client'
 
-export type CompletionFilter = 'all' | 'complete' | 'incomplete'
+import { useEffect, useRef } from 'react'
+import { create } from 'zustand'
+import type { CompletionFilter } from '@/lib/types/domain'
+
+export type { CompletionFilter }
 
 interface FiltersState {
   completionFilter: CompletionFilter
@@ -22,19 +25,23 @@ export const useFiltersStore = create<FiltersState>((set) => ({
 
   setCompletionFilter: (filter) => set({ completionFilter: filter }),
 
-  // Normalise '' to null — the canonical "no filter" sentinel is null
-  setRegionFilter: (region) => set({ regionFilter: region === '' ? null : region }),
+  // Trim and coerce to null — whitespace-only and empty strings are not valid filter values
+  setRegionFilter: (region) => set({ regionFilter: region?.trim() || null }),
 
   resetFilters: () => set(DEFAULT_STATE),
 }))
 
-// Use in every page that renders filter controls. Resets the singleton store on
-// mount only — clears filters left from a previous page. No cleanup return:
-// StrictMode's mount→cleanup→remount cycle would wipe programmatically-set
-// filters (e.g. from URL params) if cleanup also called resetFilters().
+// Use in every page that renders filter controls. The useRef guard ensures
+// resetFilters() fires exactly once per mount lifecycle — React StrictMode's
+// mount→cleanup→remount cycle would otherwise call it twice, wiping any
+// programmatically-set filters (e.g. from URL params) on the remount.
 export function useResetFiltersOnMount() {
   const resetFilters = useFiltersStore((s) => s.resetFilters)
+  const hasReset = useRef(false)
   useEffect(() => {
-    resetFilters()
+    if (!hasReset.current) {
+      resetFilters()
+      hasReset.current = true
+    }
   }, [resetFilters])
 }

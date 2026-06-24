@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { renderHook } from '@testing-library/react'
-import { useFiltersStore, useResetFiltersOnMount, type CompletionFilter } from './filters'
+import type { CompletionFilter } from '@/lib/types/domain'
+import { useFiltersStore, useResetFiltersOnMount } from './filters'
 
 beforeEach(() => {
   useFiltersStore.getState().resetFilters()
@@ -50,10 +51,21 @@ describe('setRegionFilter()', () => {
     expect(useFiltersStore.getState().regionFilter).toBeNull()
   })
 
-  it('normalises empty string to null — prevents empty string being treated as an active filter', () => {
+  it('normalises empty string to null', () => {
     useFiltersStore.getState().setRegionFilter('Eastern Fells')
     useFiltersStore.getState().setRegionFilter('')
     expect(useFiltersStore.getState().regionFilter).toBeNull()
+  })
+
+  it('normalises whitespace-only string to null', () => {
+    useFiltersStore.getState().setRegionFilter('Eastern Fells')
+    useFiltersStore.getState().setRegionFilter('   ')
+    expect(useFiltersStore.getState().regionFilter).toBeNull()
+  })
+
+  it('trims leading and trailing whitespace from valid region strings', () => {
+    useFiltersStore.getState().setRegionFilter('  Eastern Fells  ')
+    expect(useFiltersStore.getState().regionFilter).toBe('Eastern Fells')
   })
 
   it('does not affect completionFilter', () => {
@@ -101,7 +113,7 @@ describe('useResetFiltersOnMount()', () => {
     expect(useFiltersStore.getState().regionFilter).toBeNull()
   })
 
-  it('does not reset filters on unmount — StrictMode cleanup would wipe programmatically-set filters', () => {
+  it('does not reset filters on unmount — state survives until next page mounts', () => {
     const { unmount } = renderHook(() => useResetFiltersOnMount())
     useFiltersStore.getState().setCompletionFilter('incomplete')
     useFiltersStore.getState().setRegionFilter('Western Fells')
@@ -110,5 +122,17 @@ describe('useResetFiltersOnMount()', () => {
 
     expect(useFiltersStore.getState().completionFilter).toBe('incomplete')
     expect(useFiltersStore.getState().regionFilter).toBe('Western Fells')
+  })
+
+  it('resets exactly once — state set programmatically after mount is not wiped on remount', () => {
+    const { rerender } = renderHook(() => useResetFiltersOnMount())
+
+    useFiltersStore.getState().setCompletionFilter('complete')
+    useFiltersStore.getState().setRegionFilter('Eastern Fells')
+
+    rerender()
+
+    expect(useFiltersStore.getState().completionFilter).toBe('complete')
+    expect(useFiltersStore.getState().regionFilter).toBe('Eastern Fells')
   })
 })
