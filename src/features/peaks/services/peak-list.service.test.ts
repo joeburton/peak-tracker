@@ -6,6 +6,9 @@ const { mockFindAll, mockGetDb, mockCreatePeakListRepository } = vi.hoisted(() =
   mockCreatePeakListRepository: vi.fn(),
 }));
 
+vi.mock('next/cache', () => ({
+  unstable_cache: (fn: () => unknown) => fn,
+}));
 vi.mock('@/lib/db/mongodb', () => ({ getDb: mockGetDb }));
 vi.mock('@/lib/db/repositories/peak-list-repository', () => ({
   createPeakListRepository: mockCreatePeakListRepository,
