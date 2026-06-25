@@ -1,8 +1,8 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useQueryState, useQueryStates } from 'nuqs';
 import { useProgressStore } from '@/stores/progress';
-import { computeStatistics } from '@/features/peaks/services/statistics.service';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -26,12 +26,43 @@ import {
   DIR_PARAM,
   dirParser,
 } from '@/lib/nuqs/parsers';
-import type { CompletionFilter, SortField, SortDirection } from '@/lib/validation/schemas';
+import {
+  CompletionFilterSchema,
+  SortFieldSchema,
+  SortDirectionSchema,
+} from '@/lib/validation';
+import type {
+  CompletionFilter,
+  SortField,
+  SortDirection,
+  PeakListStatistics,
+} from '@/lib/validation';
 
 interface Props {
   peaks: Peak[];
   peakList: PeakList;
+  statistics: PeakListStatistics;
+  serverCompletedIds: string[];
 }
+
+const COMPLETION_LABELS: Record<CompletionFilter, string> = {
+  all: 'All peaks',
+  complete: 'Completed',
+  incomplete: 'Incomplete',
+};
+
+const SORT_FIELD_LABELS: Record<SortField, string> = {
+  name: 'Name',
+  heightMetres: 'Height (m)',
+  heightFeet: 'Height (ft)',
+  region: 'Region',
+  completion: 'Completion',
+};
+
+const SORT_DIR_LABELS: Record<SortDirection, string> = {
+  asc: 'Ascending',
+  desc: 'Descending',
+};
 
 function StatCard({ label, value }: { label: string; value: number | string }) {
   return (
@@ -42,7 +73,7 @@ function StatCard({ label, value }: { label: string; value: number | string }) {
   );
 }
 
-export function PeakListClient({ peaks, peakList }: Props) {
+export function PeakListClient({ peaks, peakList, statistics, serverCompletedIds }: Props) {
   const [search, setSearch] = useQueryState(
     SEARCH_PARAM,
     searchParser.withOptions({ throttleMs: 300 }),
@@ -59,22 +90,29 @@ export function PeakListClient({ peaks, peakList }: Props) {
   });
 
   const pendingCompletions = useProgressStore((state) => state.pendingCompletions);
-  const completedPeakIds = Array.from(pendingCompletions);
-  const statistics = computeStatistics(peaks, completedPeakIds);
 
-  const regions = [...new Set(peaks.map((p) => p.region))].sort((a, b) =>
-    a.localeCompare(b, 'en-GB'),
+  const allCompletedIds = useMemo(
+    () => new Set([...serverCompletedIds, ...Array.from(pendingCompletions)]),
+    [serverCompletedIds, pendingCompletions],
   );
 
+  const regions = useMemo(
+    () =>
+      [...new Set(peaks.map((p) => p.region))].sort((a, b) => a.localeCompare(b, 'en-GB')),
+    [peaks],
+  );
+
+  const lowerSearch = search ? search.toLowerCase() : '';
+
   const filtered = peaks.filter((peak) => {
-    if (search && !peak.name.toLowerCase().includes(search.toLowerCase())) return false;
+    if (lowerSearch && !peak.name.toLowerCase().includes(lowerSearch)) return false;
     if (region && peak.region !== region) return false;
-    if (completion === 'complete' && !pendingCompletions.has(peak.id)) return false;
-    if (completion === 'incomplete' && pendingCompletions.has(peak.id)) return false;
+    if (completion === 'complete' && !allCompletedIds.has(peak.id)) return false;
+    if (completion === 'incomplete' && allCompletedIds.has(peak.id)) return false;
     return true;
   });
 
-  const sorted = [...filtered].sort((a, b) => {
+  const sorted = filtered.sort((a, b) => {
     const mult = dir === 'asc' ? 1 : -1;
     switch (sort as SortField) {
       case 'name':
@@ -86,8 +124,8 @@ export function PeakListClient({ peaks, peakList }: Props) {
       case 'region':
         return mult * a.region.localeCompare(b.region, 'en-GB');
       case 'completion': {
-        const aVal = pendingCompletions.has(a.id) ? 1 : 0;
-        const bVal = pendingCompletions.has(b.id) ? 1 : 0;
+        const aVal = allCompletedIds.has(a.id) ? 1 : 0;
+        const bVal = allCompletedIds.has(b.id) ? 1 : 0;
         return mult * (aVal - bVal);
       }
       default:
@@ -125,17 +163,17 @@ export function PeakListClient({ peaks, peakList }: Props) {
 
           <Select
             value={completion as CompletionFilter}
-            onValueChange={(v) =>
-              setFilters({ [COMPLETION_PARAM]: v as CompletionFilter })
-            }
+            onValueChange={(v) => setFilters({ [COMPLETION_PARAM]: v as CompletionFilter })}
           >
             <SelectTrigger className="w-full sm:w-[160px]" aria-label="Filter by completion">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All peaks</SelectItem>
-              <SelectItem value="complete">Completed</SelectItem>
-              <SelectItem value="incomplete">Incomplete</SelectItem>
+              {CompletionFilterSchema.options.map((v) => (
+                <SelectItem key={v} value={v}>
+                  {COMPLETION_LABELS[v]}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
@@ -166,11 +204,11 @@ export function PeakListClient({ peaks, peakList }: Props) {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="name">Name</SelectItem>
-              <SelectItem value="heightMetres">Height (m)</SelectItem>
-              <SelectItem value="heightFeet">Height (ft)</SelectItem>
-              <SelectItem value="region">Region</SelectItem>
-              <SelectItem value="completion">Completion</SelectItem>
+              {SortFieldSchema.options.map((v) => (
+                <SelectItem key={v} value={v}>
+                  {SORT_FIELD_LABELS[v]}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
@@ -182,8 +220,11 @@ export function PeakListClient({ peaks, peakList }: Props) {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="asc">Ascending</SelectItem>
-              <SelectItem value="desc">Descending</SelectItem>
+              {SortDirectionSchema.options.map((v) => (
+                <SelectItem key={v} value={v}>
+                  {SORT_DIR_LABELS[v]}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -200,7 +241,7 @@ export function PeakListClient({ peaks, peakList }: Props) {
       ) : (
         <ul className="divide-y" role="list" aria-label="Peak list">
           {sorted.map((peak) => {
-            const completed = pendingCompletions.has(peak.id);
+            const completed = allCompletedIds.has(peak.id);
             return (
               <li
                 key={peak.id}

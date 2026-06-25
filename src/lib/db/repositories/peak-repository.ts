@@ -73,7 +73,14 @@ export function createPeakRepository(db: Db): IPeakRepository {
 
     async findBySlug(slug: string): Promise<Peak | null> {
       const doc = await col.findOne({ slug }, { projection: PROJECTION })
-      return doc ? toModel(doc) : null
+      if (!doc) return null
+      const model = toModel(doc)
+      if (model === null) {
+        throw new Error(
+          `Peak document with slug "${slug}" exists but failed validation — check logs for details.`,
+        )
+      }
+      return model
     },
 
     async findByRegion(peakListSlug: string, region: string): Promise<Peak[]> {

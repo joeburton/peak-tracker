@@ -1,8 +1,11 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
+import { auth } from '@clerk/nextjs/server';
 import type { Metadata } from 'next';
 import { getPeakList } from '@/features/peaks/services/peak-list.service';
 import { getPeaks } from '@/features/peaks/services/peak.service';
+import { getProgress } from '@/features/peaks/services/progress.service';
+import { computeStatistics } from '@/features/peaks/services/statistics.service';
 import { PeakListClient } from '@/features/peaks/components/peak-list-client';
 
 export const dynamic = 'force-dynamic';
@@ -23,15 +26,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function PeakListPage({ params }: Props) {
   const { slug } = await params;
-  const [peakList, peaks] = await Promise.all([getPeakList(slug), getPeaks(slug)]);
+  const { userId } = await auth();
+
+  const [peakList, peaks, serverCompletedIds] = await Promise.all([
+    getPeakList(slug),
+    getPeaks(slug),
+    getProgress(userId),
+  ]);
 
   if (!peakList) notFound();
+
+  const statistics = computeStatistics(peaks, serverCompletedIds);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <h1 className="mb-6 text-2xl font-semibold tracking-tight">{peakList.name}</h1>
       <Suspense fallback={<PeakListSkeleton />}>
-        <PeakListClient peaks={peaks} peakList={peakList} />
+        <PeakListClient
+          peaks={peaks}
+          peakList={peakList}
+          statistics={statistics}
+          serverCompletedIds={serverCompletedIds}
+        />
       </Suspense>
     </div>
   );

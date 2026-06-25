@@ -24,6 +24,14 @@ const mockPeakList = {
   peakCount: 3,
 };
 
+const mockStatistics = {
+  total: 3,
+  completed: 0,
+  remaining: 3,
+  percentageComplete: 0,
+  byRegion: [],
+};
+
 const mockPeaks = [
   {
     id: 'p1',
@@ -96,6 +104,13 @@ function setupDefaults(overrides: {
   );
 }
 
+const defaultProps = {
+  peaks: mockPeaks,
+  peakList: mockPeakList,
+  statistics: mockStatistics,
+  serverCompletedIds: [] as string[],
+};
+
 describe('PeakListClient', () => {
   beforeEach(() => {
     mockUseQueryState.mockReset();
@@ -105,20 +120,20 @@ describe('PeakListClient', () => {
   });
 
   it('renders all peaks when no filters are active', () => {
-    render(<PeakListClient peaks={mockPeaks} peakList={mockPeakList} />);
+    render(<PeakListClient {...defaultProps} />);
     expect(screen.getByText('Skiddaw')).toBeInTheDocument();
     expect(screen.getByText('Great Gable')).toBeInTheDocument();
     expect(screen.getByText('Helvellyn')).toBeInTheDocument();
   });
 
   it('shows the correct peak count in the summary line', () => {
-    render(<PeakListClient peaks={mockPeaks} peakList={mockPeakList} />);
+    render(<PeakListClient {...defaultProps} />);
     expect(screen.getByText(/Showing 3 of 3 peaks/)).toBeInTheDocument();
   });
 
   it('filters peaks by search term (case-insensitive)', () => {
     setupDefaults({ search: 'gable' });
-    render(<PeakListClient peaks={mockPeaks} peakList={mockPeakList} />);
+    render(<PeakListClient {...defaultProps} />);
     expect(screen.getByText('Great Gable')).toBeInTheDocument();
     expect(screen.queryByText('Skiddaw')).not.toBeInTheDocument();
     expect(screen.queryByText('Helvellyn')).not.toBeInTheDocument();
@@ -126,29 +141,35 @@ describe('PeakListClient', () => {
 
   it('filters peaks by region', () => {
     setupDefaults({ region: 'Northern Fells' });
-    render(<PeakListClient peaks={mockPeaks} peakList={mockPeakList} />);
+    render(<PeakListClient {...defaultProps} />);
     expect(screen.getByText('Skiddaw')).toBeInTheDocument();
     expect(screen.queryByText('Great Gable')).not.toBeInTheDocument();
     expect(screen.queryByText('Helvellyn')).not.toBeInTheDocument();
   });
 
-  it('filters to completed peaks only', () => {
-    setupDefaults({
-      completion: 'complete',
-      pendingCompletions: new Set(['p1']),
-    });
-    render(<PeakListClient peaks={mockPeaks} peakList={mockPeakList} />);
+  it('filters to completed peaks using serverCompletedIds', () => {
+    setupDefaults({ completion: 'complete' });
+    render(<PeakListClient {...defaultProps} serverCompletedIds={['p1']} />);
     expect(screen.getByText('Skiddaw')).toBeInTheDocument();
     expect(screen.queryByText('Great Gable')).not.toBeInTheDocument();
+    expect(screen.queryByText('Helvellyn')).not.toBeInTheDocument();
+  });
+
+  it('merges pendingCompletions with serverCompletedIds for completion filter', () => {
+    setupDefaults({
+      completion: 'complete',
+      pendingCompletions: new Set(['p2']),
+    });
+    render(<PeakListClient {...defaultProps} serverCompletedIds={['p1']} />);
+    // p1 (server) + p2 (pending) should both show as complete
+    expect(screen.getByText('Skiddaw')).toBeInTheDocument();
+    expect(screen.getByText('Great Gable')).toBeInTheDocument();
     expect(screen.queryByText('Helvellyn')).not.toBeInTheDocument();
   });
 
   it('filters to incomplete peaks only', () => {
-    setupDefaults({
-      completion: 'incomplete',
-      pendingCompletions: new Set(['p1']),
-    });
-    render(<PeakListClient peaks={mockPeaks} peakList={mockPeakList} />);
+    setupDefaults({ completion: 'incomplete' });
+    render(<PeakListClient {...defaultProps} serverCompletedIds={['p1']} />);
     expect(screen.queryByText('Skiddaw')).not.toBeInTheDocument();
     expect(screen.getByText('Great Gable')).toBeInTheDocument();
     expect(screen.getByText('Helvellyn')).toBeInTheDocument();
@@ -156,28 +177,35 @@ describe('PeakListClient', () => {
 
   it('shows an empty state message when no peaks match the filters', () => {
     setupDefaults({ search: 'zzznomatch' });
-    render(<PeakListClient peaks={mockPeaks} peakList={mockPeakList} />);
+    render(<PeakListClient {...defaultProps} />);
     expect(screen.getByText(/No peaks match your current filters/)).toBeInTheDocument();
   });
 
-  it('shows a Done badge only for completed peaks', () => {
-    setupDefaults({ pendingCompletions: new Set(['p2']) });
-    render(<PeakListClient peaks={mockPeaks} peakList={mockPeakList} />);
+  it('shows a Done badge for server-completed peaks', () => {
+    render(<PeakListClient {...defaultProps} serverCompletedIds={['p2']} />);
     const badges = screen.getAllByText('Done');
     expect(badges).toHaveLength(1);
   });
 
-  it('renders statistics: total, completed, remaining, progress', () => {
-    setupDefaults({ pendingCompletions: new Set(['p1', 'p2']) });
-    render(<PeakListClient peaks={mockPeaks} peakList={mockPeakList} />);
-    expect(screen.getByText('3')).toBeInTheDocument(); // total
-    expect(screen.getByText('2')).toBeInTheDocument(); // completed
-    expect(screen.getByText('1')).toBeInTheDocument(); // remaining
+  it('shows a Done badge for peaks completed via pendingCompletions', () => {
+    setupDefaults({ pendingCompletions: new Set(['p3']) });
+    render(<PeakListClient {...defaultProps} />);
+    const badges = screen.getAllByText('Done');
+    expect(badges).toHaveLength(1);
+  });
+
+  it('renders server-computed statistics from props', () => {
+    const stats = { total: 3, completed: 1, remaining: 2, percentageComplete: 33.3, byRegion: [] };
+    render(<PeakListClient {...defaultProps} statistics={stats} />);
+    expect(screen.getByText('3')).toBeInTheDocument();   // total
+    expect(screen.getByText('1')).toBeInTheDocument();   // completed
+    expect(screen.getByText('2')).toBeInTheDocument();   // remaining
+    expect(screen.getByText('33.3%')).toBeInTheDocument();
   });
 
   it('sorts peaks by height descending when dir=desc and sort=heightMetres', () => {
     setupDefaults({ sort: 'heightMetres', dir: 'desc' });
-    render(<PeakListClient peaks={mockPeaks} peakList={mockPeakList} />);
+    render(<PeakListClient {...defaultProps} />);
     const items = screen.getAllByRole('listitem');
     // Helvellyn (950m) > Skiddaw (931m) > Great Gable (899m)
     expect(items[0]).toHaveTextContent('Helvellyn');
@@ -186,7 +214,7 @@ describe('PeakListClient', () => {
   });
 
   it('renders search, completion, region, sort, and direction controls', () => {
-    render(<PeakListClient peaks={mockPeaks} peakList={mockPeakList} />);
+    render(<PeakListClient {...defaultProps} />);
     expect(screen.getByRole('searchbox', { name: /search peaks/i })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: /filter by completion/i })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: /filter by region/i })).toBeInTheDocument();
