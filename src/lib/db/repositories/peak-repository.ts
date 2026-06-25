@@ -2,6 +2,7 @@ import type { Collection, Db, ObjectId } from 'mongodb'
 import { PeakSchema } from '@/lib/validation/schemas'
 import type { Peak } from '@/lib/types/domain'
 import { COLLECTIONS } from '@/lib/db/collections'
+import { logger } from '@/lib/logger'
 
 interface PeakDocument {
   _id: ObjectId | string
@@ -31,8 +32,8 @@ const PROJECTION = {
   updatedAt: 1,
 } as const
 
-function toModel(doc: PeakDocument): Peak {
-  return PeakSchema.parse({
+function toModel(doc: PeakDocument): Peak | null {
+  const result = PeakSchema.safeParse({
     id: String(doc._id),
     peakListSlug: doc.peakListSlug,
     slug: doc.slug,
@@ -45,6 +46,14 @@ function toModel(doc: PeakDocument): Peak {
     createdAt: doc.createdAt.toISOString(),
     updatedAt: doc.updatedAt.toISOString(),
   })
+  if (!result.success) {
+    logger.error('Peak document failed validation — skipping', {
+      id: String(doc._id),
+      issues: result.error.issues,
+    })
+    return null
+  }
+  return result.data
 }
 
 export interface IPeakRepository {
@@ -59,7 +68,7 @@ export function createPeakRepository(db: Db): IPeakRepository {
   return {
     async findByListSlug(peakListSlug: string): Promise<Peak[]> {
       const docs = await col.find({ peakListSlug }, { projection: PROJECTION }).toArray()
-      return docs.map(toModel)
+      return docs.map(toModel).filter((x): x is Peak => x !== null)
     },
 
     async findBySlug(slug: string): Promise<Peak | null> {
@@ -71,7 +80,7 @@ export function createPeakRepository(db: Db): IPeakRepository {
       const docs = await col
         .find({ peakListSlug, region }, { projection: PROJECTION })
         .toArray()
-      return docs.map(toModel)
+      return docs.map(toModel).filter((x): x is Peak => x !== null)
     },
   }
 }
