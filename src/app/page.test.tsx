@@ -1,16 +1,14 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { mockFindAll, mockGetDb, mockCreatePeakListRepository } = vi.hoisted(() => ({
-  mockFindAll: vi.fn(),
-  mockGetDb: vi.fn().mockResolvedValue({}),
-  mockCreatePeakListRepository: vi.fn(),
+const { mockGetPeakLists } = vi.hoisted(() => ({
+  mockGetPeakLists: vi.fn(),
 }));
 
-vi.mock('@/lib/db/mongodb', () => ({ getDb: mockGetDb }));
-vi.mock('@/lib/db/repositories/peak-list-repository', () => ({
-  createPeakListRepository: mockCreatePeakListRepository,
+vi.mock('@/features/peaks/services/peak-list.service', () => ({
+  getPeakLists: mockGetPeakLists,
 }));
+
 vi.mock('next/link', () => ({
   default: ({ href, children, ...props }: { href: string; children: React.ReactNode; [key: string]: unknown }) => (
     <a href={href} {...props}>{children}</a>
@@ -26,8 +24,13 @@ const mockPeakLists = [
 
 describe('Home page', () => {
   beforeEach(() => {
-    mockCreatePeakListRepository.mockReturnValue({ findAll: mockFindAll });
-    mockFindAll.mockResolvedValue(mockPeakLists);
+    mockGetPeakLists.mockReset();
+    mockGetPeakLists.mockResolvedValue(mockPeakLists);
+  });
+
+  it('renders the Peak Lists heading', async () => {
+    render(await Home());
+    expect(screen.getByRole('heading', { name: /peak lists/i })).toBeInTheDocument();
   });
 
   it('renders the correct number of peak list items', async () => {
@@ -59,9 +62,10 @@ describe('Home page', () => {
     );
   });
 
-  it('renders an empty list when no peak lists exist', async () => {
-    mockFindAll.mockResolvedValue([]);
+  it('renders an empty-state message when no peak lists exist', async () => {
+    mockGetPeakLists.mockResolvedValue([]);
     render(await Home());
     expect(screen.queryAllByRole('listitem')).toHaveLength(0);
+    expect(screen.getByText(/no peak lists available/i)).toBeInTheDocument();
   });
 });
