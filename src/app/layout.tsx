@@ -4,6 +4,8 @@ import { ClerkProvider } from '@clerk/nextjs';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import { ThemeProvider } from '@/components/theme-provider';
 import { QueryProvider } from '@/components/query-provider';
+import { Header } from '@/components/layout/header';
+import { Footer } from '@/components/layout/footer';
 import './globals.css';
 
 const geistSans = Geist({
@@ -43,7 +45,17 @@ export default function RootLayout({
           >
             <QueryProvider>
               <NuqsAdapter>
-                {children}
+                <a
+                  href="#main-content"
+                  className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                >
+                  Skip to content
+                </a>
+                <Header />
+                <main id="main-content" className="flex-1">
+                  {children}
+                </main>
+                <Footer />
               </NuqsAdapter>
             </QueryProvider>
           </ThemeProvider>

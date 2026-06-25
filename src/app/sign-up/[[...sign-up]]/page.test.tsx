@@ -7,9 +7,8 @@ vi.mock('@clerk/nextjs', () => ({
 }))
 
 describe('SignUpPage', () => {
-  it('renders the Clerk SignUp component inside a main element', () => {
+  it('renders the Clerk SignUp component', () => {
     render(<SignUpPage />)
-    expect(screen.getByRole('main')).toBeInTheDocument()
     expect(screen.getByTestId('clerk-sign-up')).toBeInTheDocument()
   })
 
