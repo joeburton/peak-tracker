@@ -86,9 +86,13 @@ The application is a **generic peak-tracking platform**. It must support any UK 
 
 - **TanStack Query** — all remote data fetching and cache management
 
+### URL State
+
+- **nuqs** — URL search param state for search, filter, and sort (typed, validated, debounced)
+
 ### Client State
 
-- **Zustand** — ephemeral UI and application state
+- **Zustand** — ephemeral UI and application state with no URL representation (connectivity, sync, UI preferences, optimistic progress)
 
 ### Offline Storage
 
@@ -311,7 +315,7 @@ Depends on: #1, #4
 | `[Auth]`       | Clerk setup, proxy.ts, protected routes, userId integration      |
 | `[Database]`   | MongoDB setup, repository pattern, indexes, seed scripts         |
 | `[Offline]`    | Dexie setup, IndexedDB repositories, schema migrations           |
-| `[State]`      | Zustand stores, TanStack Query setup, query keys                 |
+| `[State]`      | nuqs parsers, Zustand stores, TanStack Query setup, query keys   |
 | `[Domain]`     | Peak lists, peak models, progress models, statistics service     |
 | `[UI]`         | Layout, navigation, search, filtering, sorting, statistics views |
 | `[Sync]`       | Synchronisation engine, API routes, conflict resolution          |
@@ -545,15 +549,69 @@ All remote data fetching, caching, and sync must go through TanStack Query.
 
 ---
 
+### nuqs — URL Search Param State
+
+Search, filter, and sort state lives in the URL. `nuqs` is the library that manages this layer. It provides typed, validated URL params with zero manual sync boilerplate.
+
+**Why nuqs, not Zustand, for search/filter/sort:**
+
+URL params are the correct home for search, filter, and sort state because they provide browser history, page-refresh persistence, and shareable links for free. Mirroring URL state into a separate Zustand store requires a per-page mount ritual (read `useSearchParams()` → call init actions) and a per-interaction write-back ritual (`router.replace`). With `nuqs`, the URL param IS the state — no mirror, no ritual, no divergence risk.
+
+**Setup:**
+
+`NuqsAdapter` wraps the app in `src/app/layout.tsx`. This is required for `nuqs` to function in Next.js App Router.
+
+**Centralised parsers — `src/lib/nuqs/parsers.ts`:**
+
+All URL param keys and parsers are defined in one file. Never use raw URL param name strings in components — always import from this file.
+
+| Export            | Param      | Type             | Default  |
+| ----------------- | ---------- | ---------------- | -------- |
+| `SEARCH_PARAM`    | `?search=` | `string`         | `''`     |
+| `COMPLETION_PARAM`| `?completion=` | `CompletionFilter` | `'all'` |
+| `REGION_PARAM`    | `?region=` | `string`         | `''`     |
+| `SORT_PARAM`      | `?sort=`   | `SortField`      | `'name'` |
+| `DIR_PARAM`       | `?dir=`    | `SortDirection`  | `'asc'`  |
+
+Enum parsers (`completionParser`, `sortParser`, `dirParser`) derive their valid values directly from the Zod schemas (`CompletionFilterSchema.options`, `SortFieldSchema.options`, `SortDirectionSchema.options`) — adding a new value to a schema automatically makes it a valid URL param value.
+
+**Usage in components:**
+
+```ts
+import { useQueryState, useQueryStates } from 'nuqs'
+import {
+  SEARCH_PARAM, searchParser,
+  COMPLETION_PARAM, completionParser,
+  REGION_PARAM, regionParser,
+} from '@/lib/nuqs/parsers'
+
+// Single param — with debounce for search
+const [search, setSearch] = useQueryState(SEARCH_PARAM, searchParser.withOptions({ throttleMs: 300 }))
+
+// Multiple params at once
+const [{ completion, region }, setFilters] = useQueryStates({
+  [COMPLETION_PARAM]: completionParser,
+  [REGION_PARAM]: regionParser,
+})
+```
+
+**Rules:**
+
+- Never import raw URL param name strings — always use the key constants from `src/lib/nuqs/parsers.ts`
+- Never use `useSearchParams()` directly — use `useQueryState` / `useQueryStates` from `nuqs`
+- All parsers must be defined in `src/lib/nuqs/parsers.ts` — never inline a parser in a component
+- For search, merge throttle into the parser with `.withOptions({ throttleMs: 300 })` to debounce URL writes — `useQueryState` takes two arguments, not three
+- Use `{ history: 'replace' }` (the nuqs default for App Router) — filter changes must not create browser history entries
+- `nuqs` hooks are Client Component hooks — only call them from files with `'use client'`
+
+---
+
 ### Zustand — Client State
 
-Manages ephemeral UI and application state that does not need server persistence.
+Manages ephemeral UI and application state that has **no URL representation**. Search, filter, and sort state are handled by `nuqs` — not Zustand.
 
 | Store              | Responsibility                                       |
 | ------------------ | ---------------------------------------------------- |
-| Search             | Current search term, debounced value                 |
-| Filters            | Active filter selections (completion status, region) |
-| Sort               | Active sort field and direction                      |
 | UI Preferences     | Theme, view mode (list/map), sidebar state           |
 | Connectivity State | Online/offline status, connection quality            |
 | Sync State         | Sync in progress, last synced timestamp, error state |
@@ -565,6 +623,7 @@ Manages ephemeral UI and application state that does not need server persistence
 - All stores must be independently testable
 - Use `persist` middleware only where explicitly specified
 - Connectivity and sync state must stay consistent with Dexie and TanStack Query
+- Add `'use client'` at the top of every store file
 
 ---
 
@@ -736,10 +795,7 @@ src/
 │   └── repositories/
 │
 ├── stores/                             # Zustand stores — one file per concern
-│   ├── search.ts
-│   ├── filters.ts
-│   ├── sort.ts
-│   ├── ui-preferences.ts
+│   ├── ui-preferences.ts               # search/filter/sort handled by nuqs, not Zustand
 │   ├── connectivity.ts
 │   ├── sync.ts
 │   └── progress.ts
@@ -873,7 +929,10 @@ No hardcoded list logic. Every feature is generic.
 dirty flag lives in Dexie only — never in MongoDB.
 Statistics are computed server-side in a service layer.
 All query keys in src/lib/queryKeys.ts.
-Separate Zustand store per concern.
+nuqs handles search/filter/sort URL state — not Zustand.
+All nuqs parser keys and parsers centralised in src/lib/nuqs/parsers.ts.
+Never use raw URL param name strings — always import from parsers.ts.
+Separate Zustand store per concern (UI preferences, connectivity, sync, progress only).
 userId (Clerk) on every progress record — in MongoDB and Dexie.
 Clerk configured via proxy.ts — not middleware.ts (removed in Next.js 16).
 Seed data sourced from DoBIH. Validated. Idempotent.
