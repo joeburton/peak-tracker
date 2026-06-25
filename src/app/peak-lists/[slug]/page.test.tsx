@@ -9,6 +9,7 @@ const {
   mockNotFound,
   mockAuth,
   mockPeakListClient,
+  mockStatisticsComponent,
 } = vi.hoisted(() => ({
   mockGetPeakList: vi.fn(),
   mockGetPeaks: vi.fn(),
@@ -17,6 +18,7 @@ const {
   mockNotFound: vi.fn(),
   mockAuth: vi.fn(),
   mockPeakListClient: vi.fn(),
+  mockStatisticsComponent: vi.fn(),
 }));
 
 vi.mock('@/features/peaks/services/peak-list.service', () => ({
@@ -39,6 +41,9 @@ vi.mock('@clerk/nextjs/server', () => ({
 }));
 vi.mock('@/features/peaks/components/peak-list-client', () => ({
   PeakListClient: mockPeakListClient,
+}));
+vi.mock('@/features/peaks/components/statistics', () => ({
+  Statistics: mockStatisticsComponent,
 }));
 
 import PeakListPage from './page';
@@ -83,6 +88,7 @@ describe('PeakListPage', () => {
     mockNotFound.mockReset();
     mockAuth.mockReset();
     mockPeakListClient.mockReset();
+    mockStatisticsComponent.mockReset();
 
     mockGetPeakList.mockResolvedValue(mockPeakList);
     mockGetPeaks.mockResolvedValue(mockPeaks);
@@ -91,6 +97,7 @@ describe('PeakListPage', () => {
     mockAuth.mockResolvedValue({ userId: 'user-123' });
     mockNotFound.mockImplementation(() => { throw new Error('NEXT_NOT_FOUND'); });
     mockPeakListClient.mockReturnValue(<div data-testid="peak-list-client" />);
+    mockStatisticsComponent.mockReturnValue(<div data-testid="statistics" />);
   });
 
   it('renders the peak list name as the page heading', async () => {
@@ -113,18 +120,31 @@ describe('PeakListPage', () => {
     expect(mockComputeStatistics).toHaveBeenCalledWith(mockPeaks, ['p1']);
   });
 
-  it('passes statistics and serverCompletedIds to PeakListClient', async () => {
+  it('renders the Statistics component with server-computed statistics', async () => {
     mockGetProgress.mockResolvedValue(['p1']);
     mockComputeStatistics.mockReturnValue(mockStatistics);
+    const Page = await PeakListPage({ params: Promise.resolve({ slug: 'wainwrights' }) });
+    render(Page);
+    const [calledProps] = mockStatisticsComponent.mock.calls[0] as [Record<string, unknown>];
+    expect(calledProps).toMatchObject({ statistics: mockStatistics });
+  });
+
+  it('passes peaks, peakList, and serverCompletedIds to PeakListClient', async () => {
+    mockGetProgress.mockResolvedValue(['p1']);
     const Page = await PeakListPage({ params: Promise.resolve({ slug: 'wainwrights' }) });
     render(Page);
     const [calledProps] = mockPeakListClient.mock.calls[0] as [Record<string, unknown>];
     expect(calledProps).toMatchObject({
       peaks: mockPeaks,
-      peakList: mockPeakList,
-      statistics: mockStatistics,
       serverCompletedIds: ['p1'],
     });
+  });
+
+  it('does not pass statistics to PeakListClient', async () => {
+    const Page = await PeakListPage({ params: Promise.resolve({ slug: 'wainwrights' }) });
+    render(Page);
+    const [calledProps] = mockPeakListClient.mock.calls[0] as [Record<string, unknown>];
+    expect(calledProps).not.toHaveProperty('statistics');
   });
 
   it('passes empty serverCompletedIds when user is unauthenticated', async () => {
