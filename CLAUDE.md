@@ -389,15 +389,24 @@ export interface UserProgress {
 ### Statistics (computed, not stored)
 
 ```ts
-export interface PeakListStatistics {
+export interface RegionalStatistics {
+  region: string;
   total: number;
   completed: number;
   remaining: number;
   percentageComplete: number;
 }
+
+export interface PeakListStatistics {
+  total: number;
+  completed: number;
+  remaining: number;
+  percentageComplete: number;
+  byRegion: RegionalStatistics[]; // sorted alphabetically by region name
+}
 ```
 
-Regional statistics must also be provided, derived from the same computation.
+Regional statistics are derived from the same computation as the overall stats and sorted alphabetically by region name.
 
 ---
 
