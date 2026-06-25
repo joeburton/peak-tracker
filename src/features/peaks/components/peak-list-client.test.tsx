@@ -187,12 +187,12 @@ describe('PeakListClient', () => {
     expect(items[2]).toHaveTextContent('Great Gable');
   });
 
-  it('renders search, completion, region, sort, and direction controls', () => {
+  it('renders search, completion, region, and combined sort controls', () => {
     render(<PeakListClient {...defaultProps} />);
     expect(screen.getByRole('searchbox', { name: /search peaks/i })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: /filter by completion/i })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: /filter by region/i })).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: /sort by/i })).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: /sort direction/i })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: /sort order/i })).toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: /sort direction/i })).not.toBeInTheDocument();
   });
 });
