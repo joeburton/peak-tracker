@@ -7,6 +7,7 @@ import { getPeaks } from '@/features/peaks/services/peak.service';
 import { getProgress } from '@/features/peaks/services/progress.service';
 import { computeStatistics } from '@/features/peaks/services/statistics.service';
 import { Statistics } from '@/features/peaks/components/statistics';
+import { RegionalBreakdown } from '@/features/peaks/components/regional-breakdown';
 import { PeakListClient } from '@/features/peaks/components/peak-list-client';
 
 export const dynamic = 'force-dynamic';
@@ -44,6 +45,12 @@ export default async function PeakListPage({ params }: Props) {
       <h1 className="mb-6 text-2xl font-semibold tracking-tight">{peakList.name}</h1>
       <div className="space-y-6">
         <Statistics statistics={statistics} label={`${peakList.name} progress statistics`} />
+        {statistics.byRegion.length > 0 && (
+          <>
+            <div className="h-px bg-border" />
+            <RegionalBreakdown regions={statistics.byRegion} />
+          </>
+        )}
         <div className="h-px bg-border" />
         <Suspense fallback={<PeakListSkeleton />}>
           <PeakListClient peaks={peaks} serverCompletedIds={serverCompletedIds} />

@@ -10,6 +10,7 @@ const {
   mockAuth,
   mockPeakListClient,
   mockStatisticsComponent,
+  mockRegionalBreakdown,
 } = vi.hoisted(() => ({
   mockGetPeakList: vi.fn(),
   mockGetPeaks: vi.fn(),
@@ -19,6 +20,7 @@ const {
   mockAuth: vi.fn(),
   mockPeakListClient: vi.fn(),
   mockStatisticsComponent: vi.fn(),
+  mockRegionalBreakdown: vi.fn(),
 }));
 
 vi.mock('@/features/peaks/services/peak-list.service', () => ({
@@ -44,6 +46,9 @@ vi.mock('@/features/peaks/components/peak-list-client', () => ({
 }));
 vi.mock('@/features/peaks/components/statistics', () => ({
   Statistics: mockStatisticsComponent,
+}));
+vi.mock('@/features/peaks/components/regional-breakdown', () => ({
+  RegionalBreakdown: mockRegionalBreakdown,
 }));
 
 import PeakListPage from './page';
@@ -89,6 +94,7 @@ describe('PeakListPage', () => {
     mockAuth.mockReset();
     mockPeakListClient.mockReset();
     mockStatisticsComponent.mockReset();
+    mockRegionalBreakdown.mockReset();
 
     mockGetPeakList.mockResolvedValue(mockPeakList);
     mockGetPeaks.mockResolvedValue(mockPeaks);
@@ -98,6 +104,7 @@ describe('PeakListPage', () => {
     mockNotFound.mockImplementation(() => { throw new Error('NEXT_NOT_FOUND'); });
     mockPeakListClient.mockReturnValue(<div data-testid="peak-list-client" />);
     mockStatisticsComponent.mockReturnValue(<div data-testid="statistics" />);
+    mockRegionalBreakdown.mockReturnValue(<div data-testid="regional-breakdown" />);
   });
 
   it('renders the peak list name as the page heading', async () => {
@@ -160,5 +167,23 @@ describe('PeakListPage', () => {
     expect(mockGetPeakList).toHaveBeenCalledWith('wainwrights');
     expect(mockGetPeaks).toHaveBeenCalledWith('wainwrights');
     expect(mockGetProgress).toHaveBeenCalledWith('user-123');
+  });
+
+  it('renders RegionalBreakdown with byRegion data when regions are present', async () => {
+    const byRegion = [
+      { region: 'Northern Fells', total: 18, completed: 3, remaining: 15, percentageComplete: 16.7 },
+    ];
+    mockComputeStatistics.mockReturnValue({ ...mockStatistics, byRegion });
+    const Page = await PeakListPage({ params: Promise.resolve({ slug: 'wainwrights' }) });
+    render(Page);
+    const [calledProps] = mockRegionalBreakdown.mock.calls[0] as [Record<string, unknown>];
+    expect(calledProps).toMatchObject({ regions: byRegion });
+  });
+
+  it('does not render RegionalBreakdown when byRegion is empty', async () => {
+    mockComputeStatistics.mockReturnValue({ ...mockStatistics, byRegion: [] });
+    const Page = await PeakListPage({ params: Promise.resolve({ slug: 'wainwrights' }) });
+    render(Page);
+    expect(mockRegionalBreakdown).not.toHaveBeenCalled();
   });
 });
