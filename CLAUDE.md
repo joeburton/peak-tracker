@@ -586,7 +586,7 @@ import {
 } from '@/lib/nuqs/parsers'
 
 // Single param — with debounce for search
-const [search, setSearch] = useQueryState(SEARCH_PARAM, searchParser, { throttleMs: 300 })
+const [search, setSearch] = useQueryState(SEARCH_PARAM, searchParser.withOptions({ throttleMs: 300 }))
 
 // Multiple params at once
 const [{ completion, region }, setFilters] = useQueryStates({
@@ -600,7 +600,7 @@ const [{ completion, region }, setFilters] = useQueryStates({
 - Never import raw URL param name strings — always use the key constants from `src/lib/nuqs/parsers.ts`
 - Never use `useSearchParams()` directly — use `useQueryState` / `useQueryStates` from `nuqs`
 - All parsers must be defined in `src/lib/nuqs/parsers.ts` — never inline a parser in a component
-- For search, pass `{ throttleMs: 300 }` at the hook call site to debounce URL writes
+- For search, merge throttle into the parser with `.withOptions({ throttleMs: 300 })` to debounce URL writes — `useQueryState` takes two arguments, not three
 - Use `{ history: 'replace' }` (the nuqs default for App Router) — filter changes must not create browser history entries
 - `nuqs` hooks are Client Component hooks — only call them from files with `'use client'`
 
@@ -795,10 +795,7 @@ src/
 │   └── repositories/
 │
 ├── stores/                             # Zustand stores — one file per concern
-│   ├── search.ts
-│   ├── filters.ts
-│   ├── sort.ts
-│   ├── ui-preferences.ts
+│   ├── ui-preferences.ts               # search/filter/sort handled by nuqs, not Zustand
 │   ├── connectivity.ts
 │   ├── sync.ts
 │   └── progress.ts

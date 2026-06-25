@@ -1,4 +1,4 @@
-import { parseAsString, parseAsStringEnum } from 'nuqs'
+import { parseAsString, parseAsStringEnum } from 'nuqs/server'
 import {
   CompletionFilterSchema,
   SortFieldSchema,
@@ -30,8 +30,8 @@ export const DIR_PARAM = 'dir'
 //   const [search, setSearch] = useQueryState(SEARCH_PARAM, searchParser)
 //   const [completion, setCompletion] = useQueryState(COMPLETION_PARAM, completionParser)
 //
-// For search, pass { throttleMs: 300 } at the hook call site to debounce URL writes:
-//   const [search, setSearch] = useQueryState(SEARCH_PARAM, searchParser, { throttleMs: 300 })
+// For search, merge throttle into the parser with .withOptions() to debounce URL writes:
+//   const [search, setSearch] = useQueryState(SEARCH_PARAM, searchParser.withOptions({ throttleMs: 300 }))
 
 export const searchParser = parseAsString.withDefault('')
 

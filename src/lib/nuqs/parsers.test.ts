@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { CompletionFilterSchema, SortFieldSchema, SortDirectionSchema } from '@/lib/validation'
 import {
   SEARCH_PARAM,
   COMPLETION_PARAM,
@@ -46,7 +47,7 @@ describe('completionParser', () => {
     expect(completionParser.defaultValue).toBe('all')
   })
 
-  it.each(['all', 'complete', 'incomplete'])('parses valid value "%s"', (value) => {
+  it.each(CompletionFilterSchema.options)('parses valid value "%s"', (value) => {
     expect(completionParser.parse(value)).toBe(value)
   })
 
@@ -55,9 +56,7 @@ describe('completionParser', () => {
   })
 
   it('covers all values from CompletionFilterSchema — parser and schema stay in sync', () => {
-    // If a new value is added to the schema it must appear here
-    const validValues = ['all', 'complete', 'incomplete']
-    validValues.forEach((v) => expect(completionParser.parse(v)).toBe(v))
+    CompletionFilterSchema.options.forEach((v) => expect(completionParser.parse(v)).toBe(v))
   })
 })
 
@@ -81,7 +80,7 @@ describe('sortParser', () => {
     expect(sortParser.defaultValue).toBe('name')
   })
 
-  it.each(['name', 'heightMetres', 'heightFeet', 'region', 'completion'])(
+  it.each(SortFieldSchema.options)(
     'parses valid value "%s"',
     (value) => {
       expect(sortParser.parse(value)).toBe(value)
@@ -93,8 +92,7 @@ describe('sortParser', () => {
   })
 
   it('covers all values from SortFieldSchema — parser and schema stay in sync', () => {
-    const validValues = ['name', 'heightMetres', 'heightFeet', 'region', 'completion']
-    validValues.forEach((v) => expect(sortParser.parse(v)).toBe(v))
+    SortFieldSchema.options.forEach((v) => expect(sortParser.parse(v)).toBe(v))
   })
 })
 
@@ -105,7 +103,7 @@ describe('dirParser', () => {
     expect(dirParser.defaultValue).toBe('asc')
   })
 
-  it.each(['asc', 'desc'])('parses valid value "%s"', (value) => {
+  it.each(SortDirectionSchema.options)('parses valid value "%s"', (value) => {
     expect(dirParser.parse(value)).toBe(value)
   })
 
