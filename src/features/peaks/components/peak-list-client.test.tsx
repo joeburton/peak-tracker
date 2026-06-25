@@ -17,21 +17,6 @@ vi.mock('@/stores/progress', () => ({
 
 import { PeakListClient } from './peak-list-client';
 
-const mockPeakList = {
-  id: 'list1',
-  slug: 'wainwrights',
-  name: 'Wainwrights',
-  peakCount: 3,
-};
-
-const mockStatistics = {
-  total: 3,
-  completed: 0,
-  remaining: 3,
-  percentageComplete: 0,
-  byRegion: [],
-};
-
 const mockPeaks = [
   {
     id: 'p1',
@@ -106,8 +91,6 @@ function setupDefaults(overrides: {
 
 const defaultProps = {
   peaks: mockPeaks,
-  peakList: mockPeakList,
-  statistics: mockStatistics,
   serverCompletedIds: [] as string[],
 };
 
@@ -192,15 +175,6 @@ describe('PeakListClient', () => {
     render(<PeakListClient {...defaultProps} />);
     const badges = screen.getAllByText('Done');
     expect(badges).toHaveLength(1);
-  });
-
-  it('renders server-computed statistics from props', () => {
-    const stats = { total: 3, completed: 1, remaining: 2, percentageComplete: 33.3, byRegion: [] };
-    render(<PeakListClient {...defaultProps} statistics={stats} />);
-    expect(screen.getByText('3')).toBeInTheDocument();   // total
-    expect(screen.getByText('1')).toBeInTheDocument();   // completed
-    expect(screen.getByText('2')).toBeInTheDocument();   // remaining
-    expect(screen.getByText('33.3%')).toBeInTheDocument();
   });
 
   it('sorts peaks by height descending when dir=desc and sort=heightMetres', () => {

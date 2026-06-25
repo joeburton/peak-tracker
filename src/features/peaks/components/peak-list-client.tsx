@@ -12,8 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import type { Peak, PeakList } from '@/lib/types/domain';
+import type { Peak } from '@/lib/types/domain';
 import {
   SEARCH_PARAM,
   searchParser,
@@ -31,17 +30,10 @@ import {
   SortFieldSchema,
   SortDirectionSchema,
 } from '@/lib/validation';
-import type {
-  CompletionFilter,
-  SortField,
-  SortDirection,
-  PeakListStatistics,
-} from '@/lib/validation';
+import type { CompletionFilter, SortField, SortDirection } from '@/lib/validation';
 
 interface Props {
   peaks: Peak[];
-  peakList: PeakList;
-  statistics: PeakListStatistics;
   serverCompletedIds: string[];
 }
 
@@ -64,16 +56,7 @@ const SORT_DIR_LABELS: Record<SortDirection, string> = {
   desc: 'Descending',
 };
 
-function StatCard({ label, value }: { label: string; value: number | string }) {
-  return (
-    <div className="rounded-lg border bg-card p-4 text-center">
-      <p className="text-2xl font-bold tabular-nums">{value}</p>
-      <p className="text-xs text-muted-foreground uppercase tracking-wide">{label}</p>
-    </div>
-  );
-}
-
-export function PeakListClient({ peaks, peakList, statistics, serverCompletedIds }: Props) {
+export function PeakListClient({ peaks, serverCompletedIds }: Props) {
   const [search, setSearch] = useQueryState(
     SEARCH_PARAM,
     searchParser.withOptions({ throttleMs: 300 }),
@@ -135,17 +118,6 @@ export function PeakListClient({ peaks, peakList, statistics, serverCompletedIds
 
   return (
     <div className="space-y-6">
-      <section aria-label={`${peakList.name} progress statistics`}>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatCard label="Total" value={statistics.total} />
-          <StatCard label="Completed" value={statistics.completed} />
-          <StatCard label="Remaining" value={statistics.remaining} />
-          <StatCard label="Progress" value={`${statistics.percentageComplete}%`} />
-        </div>
-      </section>
-
-      <Separator />
-
       <section aria-label="Search and filter controls">
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <div className="flex-1 min-w-[200px]">
