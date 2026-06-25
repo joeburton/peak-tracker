@@ -584,6 +584,8 @@ All URL param keys and parsers are defined in one file. Never use raw URL param 
 
 Enum parsers (`completionParser`, `sortParser`, `dirParser`) derive their valid values directly from the Zod schemas (`CompletionFilterSchema.options`, `SortFieldSchema.options`, `SortDirectionSchema.options`) — adding a new value to a schema automatically makes it a valid URL param value.
 
+The sort UI collapses `SORT_PARAM` and `DIR_PARAM` into a single `<Select>` backed by the `COMBINED_SORT_OPTIONS` array in `PeakListClient`. Each entry maps a human-readable label (e.g. `"Height (high → low)"`) to `{ field: SortField, dir: SortDirection }`. The URL params are written separately on change — URL shape is unchanged.
+
 **Usage in components:**
 
 ```ts

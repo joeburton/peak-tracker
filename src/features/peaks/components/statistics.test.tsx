@@ -21,10 +21,10 @@ describe('Statistics', () => {
 
   it('renders term labels for each statistic', () => {
     render(<Statistics statistics={mockStatistics} />);
-    expect(screen.getByText('Total')).toBeInTheDocument();
-    expect(screen.getByText('Completed')).toBeInTheDocument();
-    expect(screen.getByText('Remaining')).toBeInTheDocument();
-    expect(screen.getByText('Progress')).toBeInTheDocument();
+    expect(screen.getByText('total')).toBeInTheDocument();
+    expect(screen.getByText('completed')).toBeInTheDocument();
+    expect(screen.getByText('remaining')).toBeInTheDocument();
+    expect(screen.getByText('complete')).toBeInTheDocument();
   });
 
   it('renders a section with the default aria-label', () => {

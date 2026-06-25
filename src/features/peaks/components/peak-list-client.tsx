@@ -25,11 +25,7 @@ import {
   DIR_PARAM,
   dirParser,
 } from '@/lib/nuqs/parsers';
-import {
-  CompletionFilterSchema,
-  SortFieldSchema,
-  SortDirectionSchema,
-} from '@/lib/validation';
+import { CompletionFilterSchema } from '@/lib/validation';
 import type { CompletionFilter, SortField, SortDirection } from '@/lib/validation';
 
 interface Props {
@@ -43,18 +39,16 @@ const COMPLETION_LABELS: Record<CompletionFilter, string> = {
   incomplete: 'Incomplete',
 };
 
-const SORT_FIELD_LABELS: Record<SortField, string> = {
-  name: 'Name',
-  heightMetres: 'Height (m)',
-  heightFeet: 'Height (ft)',
-  region: 'Region',
-  completion: 'Completion',
-};
-
-const SORT_DIR_LABELS: Record<SortDirection, string> = {
-  asc: 'Ascending',
-  desc: 'Descending',
-};
+const COMBINED_SORT_OPTIONS: { value: string; label: string; field: SortField; dir: SortDirection }[] = [
+  { value: 'name-asc',          label: 'Name A → Z',           field: 'name',         dir: 'asc'  },
+  { value: 'name-desc',         label: 'Name Z → A',           field: 'name',         dir: 'desc' },
+  { value: 'heightMetres-desc', label: 'Height (high → low)',  field: 'heightMetres', dir: 'desc' },
+  { value: 'heightMetres-asc',  label: 'Height (low → high)',  field: 'heightMetres', dir: 'asc'  },
+  { value: 'region-asc',        label: 'Region A → Z',         field: 'region',       dir: 'asc'  },
+  { value: 'region-desc',       label: 'Region Z → A',         field: 'region',       dir: 'desc' },
+  { value: 'completion-desc',   label: 'Completed first',      field: 'completion',   dir: 'desc' },
+  { value: 'completion-asc',    label: 'Incomplete first',     field: 'completion',   dir: 'asc'  },
+];
 
 export function PeakListClient({ peaks, serverCompletedIds }: Props) {
   const [search, setSearch] = useQueryState(
@@ -116,6 +110,15 @@ export function PeakListClient({ peaks, serverCompletedIds }: Props) {
     }
   });
 
+  const combinedSortValue = `${sort}-${dir}`;
+
+  function handleSortChange(value: string) {
+    const option = COMBINED_SORT_OPTIONS.find((o) => o.value === value);
+    if (option) {
+      setSort({ [SORT_PARAM]: option.field, [DIR_PARAM]: option.dir });
+    }
+  }
+
   return (
     <div className="space-y-6">
       <section aria-label="Search and filter controls">
@@ -168,33 +171,14 @@ export function PeakListClient({ peaks, serverCompletedIds }: Props) {
             </SelectContent>
           </Select>
 
-          <Select
-            value={sort as SortField}
-            onValueChange={(v) => setSort({ [SORT_PARAM]: v as SortField })}
-          >
-            <SelectTrigger className="w-full sm:w-[160px]" aria-label="Sort by">
+          <Select value={combinedSortValue} onValueChange={handleSortChange}>
+            <SelectTrigger className="w-full sm:w-[200px]" aria-label="Sort order">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {SortFieldSchema.options.map((v) => (
-                <SelectItem key={v} value={v}>
-                  {SORT_FIELD_LABELS[v]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select
-            value={dir as SortDirection}
-            onValueChange={(v) => setSort({ [DIR_PARAM]: v as SortDirection })}
-          >
-            <SelectTrigger className="w-full sm:w-[130px]" aria-label="Sort direction">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {SortDirectionSchema.options.map((v) => (
-                <SelectItem key={v} value={v}>
-                  {SORT_DIR_LABELS[v]}
+              {COMBINED_SORT_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
                 </SelectItem>
               ))}
             </SelectContent>
