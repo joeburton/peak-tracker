@@ -74,6 +74,42 @@ describe('setRegionFilter()', () => {
   })
 })
 
+// ── initCompletionFilterFromUrl() ────────────────────────────────────────────
+
+describe('initCompletionFilterFromUrl()', () => {
+  it.each<string>(['all', 'complete', 'incomplete'])(
+    'sets completionFilter to "%s" when the URL value is valid',
+    (value) => {
+      useFiltersStore.getState().initCompletionFilterFromUrl(value)
+      expect(useFiltersStore.getState().completionFilter).toBe(value)
+    },
+  )
+
+  it('falls back to "all" when the URL value is invalid', () => {
+    useFiltersStore.getState().setCompletionFilter('complete')
+    useFiltersStore.getState().initCompletionFilterFromUrl('bogus')
+    expect(useFiltersStore.getState().completionFilter).toBe('all')
+  })
+
+  it('falls back to "all" when the URL value is null (param absent)', () => {
+    useFiltersStore.getState().setCompletionFilter('incomplete')
+    useFiltersStore.getState().initCompletionFilterFromUrl(null)
+    expect(useFiltersStore.getState().completionFilter).toBe('all')
+  })
+
+  it('falls back to "all" when the URL value is empty string', () => {
+    useFiltersStore.getState().setCompletionFilter('incomplete')
+    useFiltersStore.getState().initCompletionFilterFromUrl('')
+    expect(useFiltersStore.getState().completionFilter).toBe('all')
+  })
+
+  it('does not affect regionFilter', () => {
+    useFiltersStore.getState().setRegionFilter('Eastern Fells')
+    useFiltersStore.getState().initCompletionFilterFromUrl('complete')
+    expect(useFiltersStore.getState().regionFilter).toBe('Eastern Fells')
+  })
+})
+
 // ── resetFilters() ────────────────────────────────────────────────────────────
 
 describe('resetFilters()', () => {

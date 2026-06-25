@@ -117,17 +117,17 @@ Filter, search, and sort state must be synced with URL search params. This is th
 | URL param      | Written from                | Read into (on mount)                        | Example                        |
 | -------------- | --------------------------- | ------------------------------------------- | ------------------------------ |
 | `?search=`     | `debouncedSearchTerm`       | `initFromUrl(term)` — sets both fields      | `?search=scafell`              |
-| `?completion=` | `completionFilter`          | `setCompletionFilter(value)`                | `?completion=incomplete`       |
-| `?region=`     | `regionFilter`              | `setRegionFilter(value)`                    | `?region=Eastern+Fells`        |
-| `?sort=`       | `sortField`                 | `setSortField(value)`                       | `?sort=heightMetres`           |
-| `?dir=`        | `sortDirection`             | `setSortDirection(value)`                   | `?dir=desc`                    |
+| `?completion=` | `completionFilter`          | `initCompletionFilterFromUrl(raw)` — validates via Zod, falls back to `'all'` | `?completion=incomplete` |
+| `?region=`     | `regionFilter`              | `setRegionFilter(value)` — safe on mount    | `?region=Eastern+Fells`        |
+| `?sort=`       | `sortField`                 | `setSortField(value)` — not yet implemented (Milestone 6) | `?sort=heightMetres` |
+| `?dir=`        | `sortDirection`             | `setSortDirection(value)` — not yet implemented (Milestone 6) | `?dir=desc` |
 
 **Two-layer contract:**
 
 1. **URL is the source of truth.** On mount, the page reads `useSearchParams()` and initialises the stores from URL params (see table above).
 2. **Zustand is the in-memory reactive layer.** Components subscribe to stores for fast, synchronous reads and to avoid prop drilling. On user interaction, the component updates the store immediately (for instant UI response) and syncs to the URL via `router.replace` (for persistence and history).
 
-**Search debounce and URL:** The URL is updated with the *debounced* value only — `debouncedSearchTerm` — not on every keystroke. On mount, use `initFromUrl(term)` rather than `setSearchTerm(term)`: this sets both `searchTerm` (input display) and `debouncedSearchTerm` (filter driver) immediately without starting a debounce timer, and cancels any orphaned timer from a previous page.
+**Search debounce and URL:** The URL is updated with the *debounced* value only — `debouncedSearchTerm` — not on every keystroke. On mount, use `initFromUrl(term)` rather than `onSearchInput(term)`: this sets both `searchTerm` (input display) and `debouncedSearchTerm` (filter driver) immediately without starting a debounce timer, and cancels any orphaned timer from a previous page.
 
 **`useSearchParams` requires a Suspense boundary.** Any Client Component calling `useSearchParams()` must be wrapped in `<Suspense>` in its nearest Server Component ancestor. The peak list page (`/peak-lists/[slug]/page.tsx`) must account for this in its layout.
 

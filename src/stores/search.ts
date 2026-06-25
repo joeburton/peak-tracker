@@ -7,8 +7,9 @@ export const DEBOUNCE_MS = 300
 interface SearchState {
   searchTerm: string
   debouncedSearchTerm: string
-  setSearchTerm: (term: string) => void
-  // Use on URL-driven mount: sets both fields directly, cancels any orphaned timer
+  // Call when user types in the search input — starts debounce timer
+  onSearchInput: (term: string) => void
+  // Call on URL-driven mount — sets both fields directly, cancels any orphaned timer
   initFromUrl: (term: string) => void
   reset: () => void
 }
@@ -20,7 +21,7 @@ export const useSearchStore = create<SearchState>((set) => {
     searchTerm: '',
     debouncedSearchTerm: '',
 
-    setSearchTerm: (term) => {
+    onSearchInput: (term) => {
       set({ searchTerm: term })
       if (timer !== null) clearTimeout(timer)
       timer = setTimeout(() => {

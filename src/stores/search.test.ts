@@ -10,38 +10,38 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
-// ── setSearchTerm() ────────────────────────────────────────────────────────────
+// ── onSearchInput() ────────────────────────────────────────────────────────────
 
-describe('setSearchTerm()', () => {
+describe('onSearchInput()', () => {
   it('updates searchTerm immediately', () => {
-    useSearchStore.getState().setSearchTerm('wainwright')
+    useSearchStore.getState().onSearchInput('wainwright')
     expect(useSearchStore.getState().searchTerm).toBe('wainwright')
   })
 
   it('does not update debouncedSearchTerm before the debounce delay', () => {
-    useSearchStore.getState().setSearchTerm('wainwright')
+    useSearchStore.getState().onSearchInput('wainwright')
     vi.advanceTimersByTime(DEBOUNCE_MS - 1)
     expect(useSearchStore.getState().debouncedSearchTerm).toBe('')
   })
 
   it('updates debouncedSearchTerm after the debounce delay', () => {
-    useSearchStore.getState().setSearchTerm('wainwright')
+    useSearchStore.getState().onSearchInput('wainwright')
     vi.advanceTimersByTime(DEBOUNCE_MS)
     expect(useSearchStore.getState().debouncedSearchTerm).toBe('wainwright')
   })
 
   it('debounces rapid calls — only the last value is propagated', () => {
-    useSearchStore.getState().setSearchTerm('w')
-    useSearchStore.getState().setSearchTerm('wa')
-    useSearchStore.getState().setSearchTerm('wai')
+    useSearchStore.getState().onSearchInput('w')
+    useSearchStore.getState().onSearchInput('wa')
+    useSearchStore.getState().onSearchInput('wai')
     vi.advanceTimersByTime(DEBOUNCE_MS)
     expect(useSearchStore.getState().debouncedSearchTerm).toBe('wai')
   })
 
   it('resets the debounce window when called again within the delay', () => {
-    useSearchStore.getState().setSearchTerm('first')
+    useSearchStore.getState().onSearchInput('first')
     vi.advanceTimersByTime(DEBOUNCE_MS - 1)
-    useSearchStore.getState().setSearchTerm('second')
+    useSearchStore.getState().onSearchInput('second')
     vi.advanceTimersByTime(DEBOUNCE_MS - 1)
     expect(useSearchStore.getState().debouncedSearchTerm).toBe('')
     vi.advanceTimersByTime(1)
@@ -49,26 +49,26 @@ describe('setSearchTerm()', () => {
   })
 
   it('propagates an empty string when cleared', () => {
-    useSearchStore.getState().setSearchTerm('wainwright')
+    useSearchStore.getState().onSearchInput('wainwright')
     vi.advanceTimersByTime(DEBOUNCE_MS)
-    useSearchStore.getState().setSearchTerm('')
+    useSearchStore.getState().onSearchInput('')
     vi.advanceTimersByTime(DEBOUNCE_MS)
     expect(useSearchStore.getState().debouncedSearchTerm).toBe('')
   })
 
   it('preserves raw searchTerm including leading/trailing spaces', () => {
-    useSearchStore.getState().setSearchTerm('  wainwright  ')
+    useSearchStore.getState().onSearchInput('  wainwright  ')
     expect(useSearchStore.getState().searchTerm).toBe('  wainwright  ')
   })
 
   it('trims debouncedSearchTerm — whitespace-only input resolves to empty string', () => {
-    useSearchStore.getState().setSearchTerm('   ')
+    useSearchStore.getState().onSearchInput('   ')
     vi.advanceTimersByTime(DEBOUNCE_MS)
     expect(useSearchStore.getState().debouncedSearchTerm).toBe('')
   })
 
   it('trims leading and trailing whitespace from debouncedSearchTerm', () => {
-    useSearchStore.getState().setSearchTerm('  wainwright  ')
+    useSearchStore.getState().onSearchInput('  wainwright  ')
     vi.advanceTimersByTime(DEBOUNCE_MS)
     expect(useSearchStore.getState().debouncedSearchTerm).toBe('wainwright')
   })
@@ -78,7 +78,7 @@ describe('setSearchTerm()', () => {
 
 describe('reset()', () => {
   it('clears both searchTerm and debouncedSearchTerm', () => {
-    useSearchStore.getState().setSearchTerm('wainwright')
+    useSearchStore.getState().onSearchInput('wainwright')
     vi.advanceTimersByTime(DEBOUNCE_MS)
     useSearchStore.getState().reset()
     expect(useSearchStore.getState().searchTerm).toBe('')
@@ -86,7 +86,7 @@ describe('reset()', () => {
   })
 
   it('cancels a pending debounce — debouncedSearchTerm stays empty after reset', () => {
-    useSearchStore.getState().setSearchTerm('wainwright')
+    useSearchStore.getState().onSearchInput('wainwright')
     useSearchStore.getState().reset()
     vi.advanceTimersByTime(DEBOUNCE_MS)
     expect(useSearchStore.getState().debouncedSearchTerm).toBe('')
@@ -109,7 +109,7 @@ describe('initFromUrl()', () => {
   })
 
   it('cancels any orphaned in-flight debounce from the previous page', () => {
-    useSearchStore.getState().setSearchTerm('stale')
+    useSearchStore.getState().onSearchInput('stale')
     useSearchStore.getState().initFromUrl('scafell')
     vi.advanceTimersByTime(DEBOUNCE_MS)
     // Stale timer must not overwrite after initFromUrl
@@ -117,7 +117,7 @@ describe('initFromUrl()', () => {
   })
 
   it('sets both fields to empty string when called with empty string', () => {
-    useSearchStore.getState().setSearchTerm('wainwright')
+    useSearchStore.getState().onSearchInput('wainwright')
     vi.advanceTimersByTime(DEBOUNCE_MS)
     useSearchStore.getState().initFromUrl('')
     expect(useSearchStore.getState().searchTerm).toBe('')

@@ -573,14 +573,14 @@ These three stores must be synced with URL search params. This is non-negotiable
 | URL param      | Written from           | Read into on mount                            |
 | -------------- | ---------------------- | --------------------------------------------- |
 | `?search=`     | `debouncedSearchTerm`  | `initFromUrl(term)` — sets both fields, cancels orphaned timer |
-| `?completion=` | `completionFilter`     | `setCompletionFilter(value)`                  |
-| `?region=`     | `regionFilter`         | `setRegionFilter(value)`                      |
-| `?sort=`       | `sortField`            | `setSortField(value)`                         |
-| `?dir=`        | `sortDirection`        | `setSortDirection(value)`                     |
+| `?completion=` | `completionFilter`     | `initCompletionFilterFromUrl(raw)` — validates via Zod, falls back to `'all'` |
+| `?region=`     | `regionFilter`         | `setRegionFilter(value)` — safe to call on mount, normalises whitespace |
+| `?sort=`       | `sortField`            | `setSortField(value)` — not yet implemented (Milestone 6) |
+| `?dir=`        | `sortDirection`        | `setSortDirection(value)` — not yet implemented (Milestone 6) |
 
 **Two-layer contract for Search/Filters/Sort:**
 
-1. **On page mount:** read `useSearchParams()` and use the actions in the table above to initialise stores from the URL. For search, always use `initFromUrl()` — not `setSearchTerm()` — so both `searchTerm` and `debouncedSearchTerm` are set immediately without a debounce timer.
+1. **On page mount:** read `useSearchParams()` and use the actions in the table above to initialise stores from the URL. For search, always use `initFromUrl()` — not `onSearchInput()` — so both `searchTerm` and `debouncedSearchTerm` are set immediately without a debounce timer.
 2. **On user interaction:** update the store immediately (instant UI), then sync to the URL via `router.replace` (persistence and history). For search, write `debouncedSearchTerm` to the URL (after the debounce fires), not the raw `searchTerm`.
 3. **The URL is the reset mechanism** — navigating to a new peak list with clean URL params leaves the stores uninitialised until mount; no store reset hooks are needed or allowed for Search, Filters, or Sort.
 
