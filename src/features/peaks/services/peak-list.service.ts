@@ -24,3 +24,13 @@ export const getPeakLists: () => Promise<PeakList[]> = unstable_cache(
   ['peak-lists'],
   { revalidate: 3600, tags: ['peak-lists'] },
 );
+
+export const getPeakList: (slug: string) => Promise<PeakList | null> = unstable_cache(
+  async (slug: string): Promise<PeakList | null> => {
+    const db = await getDb();
+    const repo = createPeakListRepository(db);
+    return repo.findBySlug(slug);
+  },
+  ['peak-list-by-slug'],
+  { revalidate: 3600, tags: ['peak-lists'] },
+);

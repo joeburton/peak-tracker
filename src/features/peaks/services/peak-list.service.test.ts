@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { mockFindAll, mockGetDb, mockCreatePeakListRepository } = vi.hoisted(() => ({
+const { mockFindAll, mockFindBySlug, mockGetDb, mockCreatePeakListRepository } = vi.hoisted(() => ({
   mockFindAll: vi.fn(),
+  mockFindBySlug: vi.fn(),
   mockGetDb: vi.fn(),
   mockCreatePeakListRepository: vi.fn(),
 }));
@@ -14,7 +15,7 @@ vi.mock('@/lib/db/repositories/peak-list-repository', () => ({
   createPeakListRepository: mockCreatePeakListRepository,
 }));
 
-import { getPeakLists } from './peak-list.service';
+import { getPeakLists, getPeakList } from './peak-list.service';
 
 const mockDb = {};
 const mockPeakLists = [
@@ -29,8 +30,9 @@ describe('getPeakLists()', () => {
     mockCreatePeakListRepository.mockReset();
 
     mockGetDb.mockResolvedValue(mockDb);
-    mockCreatePeakListRepository.mockReturnValue({ findAll: mockFindAll });
+    mockCreatePeakListRepository.mockReturnValue({ findAll: mockFindAll, findBySlug: mockFindBySlug });
     mockFindAll.mockResolvedValue(mockPeakLists);
+    mockFindBySlug.mockResolvedValue(mockPeakLists[0]);
   });
 
   it('calls getDb to obtain the database connection', async () => {
@@ -61,5 +63,38 @@ describe('getPeakLists()', () => {
   it('propagates errors thrown by findAll', async () => {
     mockFindAll.mockRejectedValue(new Error('query failed'));
     await expect(getPeakLists()).rejects.toThrow('query failed');
+  });
+});
+
+describe('getPeakList()', () => {
+  beforeEach(() => {
+    mockFindBySlug.mockReset();
+    mockGetDb.mockReset();
+    mockCreatePeakListRepository.mockReset();
+
+    mockGetDb.mockResolvedValue(mockDb);
+    mockCreatePeakListRepository.mockReturnValue({ findAll: mockFindAll, findBySlug: mockFindBySlug });
+    mockFindBySlug.mockResolvedValue(mockPeakLists[0]);
+  });
+
+  it('calls findBySlug with the provided slug', async () => {
+    await getPeakList('wainwrights');
+    expect(mockFindBySlug).toHaveBeenCalledWith('wainwrights');
+  });
+
+  it('returns the peak list when found', async () => {
+    const result = await getPeakList('wainwrights');
+    expect(result).toEqual(mockPeakLists[0]);
+  });
+
+  it('returns null when the slug does not exist', async () => {
+    mockFindBySlug.mockResolvedValue(null);
+    const result = await getPeakList('unknown');
+    expect(result).toBeNull();
+  });
+
+  it('propagates errors thrown by findBySlug', async () => {
+    mockFindBySlug.mockRejectedValue(new Error('query failed'));
+    await expect(getPeakList('wainwrights')).rejects.toThrow('query failed');
   });
 });

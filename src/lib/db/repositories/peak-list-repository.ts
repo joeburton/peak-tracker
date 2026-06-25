@@ -50,7 +50,14 @@ export function createPeakListRepository(db: Db): IPeakListRepository {
 
     async findBySlug(slug: string): Promise<PeakList | null> {
       const doc = await col.findOne({ slug }, { projection: PROJECTION })
-      return doc ? toModel(doc) : null
+      if (!doc) return null
+      const model = toModel(doc)
+      if (model === null) {
+        throw new Error(
+          `PeakList document with slug "${slug}" exists but failed validation — check logs for details.`,
+        )
+      }
+      return model
     },
   }
 }
