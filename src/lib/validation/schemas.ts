@@ -52,3 +52,9 @@ export interface PeakListStatistics {
 
 export const CompletionFilterSchema = z.enum(['all', 'complete', 'incomplete'])
 export type CompletionFilter = z.infer<typeof CompletionFilterSchema>
+
+export const SortFieldSchema = z.enum(['name', 'heightMetres', 'heightFeet', 'region', 'completion'])
+export type SortField = z.infer<typeof SortFieldSchema>
+
+export const SortDirectionSchema = z.enum(['asc', 'desc'])
+export type SortDirection = z.infer<typeof SortDirectionSchema>

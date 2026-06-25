@@ -1,4 +1,11 @@
-export { PeakListSchema, PeakSchema, UserProgressSchema, CompletionFilterSchema } from './schemas'
+export {
+  PeakListSchema,
+  PeakSchema,
+  UserProgressSchema,
+  CompletionFilterSchema,
+  SortFieldSchema,
+  SortDirectionSchema,
+} from './schemas'
 export type {
   PeakList,
   Peak,
@@ -6,4 +13,6 @@ export type {
   PeakListStatistics,
   RegionalStatistics,
   CompletionFilter,
+  SortField,
+  SortDirection,
 } from './schemas'

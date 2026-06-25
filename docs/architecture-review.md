@@ -99,37 +99,77 @@ The application must work fully offline, be installable on mobile devices, and s
 
 ---
 
-### 2.6 Client State — Zustand
+### 2.6 URL State — nuqs
 
-**Decision:** Zustand for ephemeral UI and application state.
+**Decision:** `nuqs` for all URL search param state (search, filter, sort).
+
+**Rationale:**
+
+Search, filter, and sort state belongs in the URL — it provides browser history, page-refresh persistence, and shareable links. The previous design mirrored URL state into Zustand stores using a two-layer contract (init actions on mount, `router.replace` write-back on interaction). This created a fragile per-page mount ritual: five separate init calls, each a place where a developer could forget one and introduce a silent state divergence. `nuqs` eliminates this entirely — the URL param IS the state, with no mirror and no ritual.
+
+**Architecture:**
+
+`NuqsAdapter` wraps the application in `src/app/layout.tsx`.
+
+All URL param keys and parsers are centralised in `src/lib/nuqs/parsers.ts`. This is the single source of truth — analogous to `src/lib/queryKeys.ts` for TanStack Query.
+
+| Param            | Key          | Type               | Default  | Parser            |
+| ---------------- | ------------ | ------------------ | -------- | ----------------- |
+| Search           | `?search=`   | `string`           | `''`     | `searchParser`    |
+| Completion filter| `?completion=` | `CompletionFilter` | `'all'`  | `completionParser`|
+| Region filter    | `?region=`   | `string`           | `''`     | `regionParser`    |
+| Sort field       | `?sort=`     | `SortField`        | `'name'` | `sortParser`      |
+| Sort direction   | `?dir=`      | `SortDirection`    | `'asc'`  | `dirParser`       |
+
+Enum parsers derive their valid values from Zod schemas (`CompletionFilterSchema.options`, `SortFieldSchema.options`, `SortDirectionSchema.options`) — the two stay in sync automatically.
+
+**Usage pattern in components:**
+
+```ts
+import { useQueryState, useQueryStates } from 'nuqs'
+import { SEARCH_PARAM, searchParser, COMPLETION_PARAM, completionParser } from '@/lib/nuqs/parsers'
+
+// Search — debounce URL writes at the hook call site
+const [search, setSearch] = useQueryState(SEARCH_PARAM, searchParser, { throttleMs: 300 })
+
+// Filters — group with useQueryStates for atomic updates
+const [{ completion, region }, setFilters] = useQueryStates({
+  [COMPLETION_PARAM]: completionParser,
+  [REGION_PARAM]: regionParser,
+})
+```
+
+Invalid URL param values (e.g. `?completion=bogus`) are rejected by the parser and fall back to the default — no runtime cast, no silent corruption.
+
+**Rules:**
+
+- Never use raw URL param name strings — always import from `src/lib/nuqs/parsers.ts`
+- Never use `useSearchParams()` directly — use `useQueryState` / `useQueryStates`
+- All parsers defined in `src/lib/nuqs/parsers.ts` — never inline in a component
+- Search debounce: pass `{ throttleMs: 300 }` at the hook call site
+- `nuqs` hooks are Client Component hooks — only in files with `'use client'`
+
+---
+
+### 2.7 Client State — Zustand
+
+**Decision:** Zustand for ephemeral UI and application state that has no URL representation.
 
 **Rationale:**
 
 - Minimal API with no boilerplate.
-- Each concern is a separate slice (search, filters, sort, UI preferences, connectivity, sync state, progress state).
+- Each concern is a separate store (UI preferences, connectivity, sync state, progress state).
 - Independently testable stores.
 - `persist` middleware used only where explicitly specified.
 
-**URL search params as source of truth for filter/search/sort state:**
+**Scope (post-nuqs):** Zustand stores cover only the four concerns below. Search, filter, and sort state moved to `nuqs`.
 
-Filter, search, and sort state must be synced with URL search params. This is the correct Next.js App Router pattern — it provides browser history integration, page-refresh persistence, and shareable links at no extra cost.
-
-| URL param      | Written from                | Read into (on mount)                        | Example                        |
-| -------------- | --------------------------- | ------------------------------------------- | ------------------------------ |
-| `?search=`     | `debouncedSearchTerm`       | `initFromUrl(term)` — sets both fields      | `?search=scafell`              |
-| `?completion=` | `completionFilter`          | `initCompletionFilterFromUrl(raw)` — validates via Zod, falls back to `'all'` | `?completion=incomplete` |
-| `?region=`     | `regionFilter`              | `setRegionFilter(value)` — safe on mount    | `?region=Eastern+Fells`        |
-| `?sort=`       | `sortField`                 | `setSortField(value)` — not yet implemented (Milestone 6) | `?sort=heightMetres` |
-| `?dir=`        | `sortDirection`             | `setSortDirection(value)` — not yet implemented (Milestone 6) | `?dir=desc` |
-
-**Two-layer contract:**
-
-1. **URL is the source of truth.** On mount, the page reads `useSearchParams()` and initialises the stores from URL params (see table above).
-2. **Zustand is the in-memory reactive layer.** Components subscribe to stores for fast, synchronous reads and to avoid prop drilling. On user interaction, the component updates the store immediately (for instant UI response) and syncs to the URL via `router.replace` (for persistence and history).
-
-**Search debounce and URL:** The URL is updated with the *debounced* value only — `debouncedSearchTerm` — not on every keystroke. On mount, use `initFromUrl(term)` rather than `onSearchInput(term)`: this sets both `searchTerm` (input display) and `debouncedSearchTerm` (filter driver) immediately without starting a debounce timer, and cancels any orphaned timer from a previous page.
-
-**`useSearchParams` requires a Suspense boundary.** Any Client Component calling `useSearchParams()` must be wrapped in `<Suspense>` in its nearest Server Component ancestor. The peak list page (`/peak-lists/[slug]/page.tsx`) must account for this in its layout.
+| Store              | Responsibility                                       |
+| ------------------ | ---------------------------------------------------- |
+| UI Preferences     | Theme, view mode (list/map), sidebar state           |
+| Connectivity State | Online/offline status, connection quality            |
+| Sync State         | Sync in progress, last synced timestamp, error state |
+| Progress State     | Locally tracked progress before sync confirmation    |
 
 **User preferences split — Zustand vs Dexie:**
 Two layers handle persistence for different reasons:
