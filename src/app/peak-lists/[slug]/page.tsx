@@ -7,7 +7,7 @@ import { getPeaks } from '@/features/peaks/services/peak.service';
 import { getProgress } from '@/features/peaks/services/progress.service';
 import { computeStatistics } from '@/features/peaks/services/statistics.service';
 import { Statistics } from '@/features/peaks/components/statistics';
-import { RegionalBreakdownAccordion } from '@/features/peaks/components/regional-breakdown-accordion';
+import { RegionalBreakdownDialog } from '@/features/peaks/components/regional-breakdown-dialog';
 import { PeakListClient } from '@/features/peaks/components/peak-list-client';
 
 export const dynamic = 'force-dynamic';
@@ -44,13 +44,15 @@ export default async function PeakListPage({ params }: Props) {
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <h1 className="mb-6 text-2xl font-semibold tracking-tight">{peakList.name}</h1>
       <div className="space-y-6">
-        <Statistics statistics={statistics} label={`${peakList.name} progress statistics`} />
-        {statistics.byRegion.length > 0 && (
-          <>
-            <div className="h-px bg-border" />
-            <RegionalBreakdownAccordion regions={statistics.byRegion} />
-          </>
-        )}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between gap-4">
+            <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              Progress
+            </h2>
+            <RegionalBreakdownDialog regions={statistics.byRegion} />
+          </div>
+          <Statistics statistics={statistics} label={`${peakList.name} progress statistics`} />
+        </div>
         <div className="h-px bg-border" />
         <Suspense fallback={<PeakListSkeleton />}>
           <PeakListClient peaks={peaks} serverCompletedIds={serverCompletedIds} />
