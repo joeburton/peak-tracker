@@ -26,7 +26,8 @@ import {
   dirParser,
 } from '@/lib/nuqs/parsers';
 import { CompletionFilterSchema } from '@/lib/validation';
-import type { CompletionFilter, SortField, SortDirection } from '@/lib/validation';
+import type { CompletionFilter, SortField } from '@/lib/validation';
+import { COMBINED_SORT_OPTIONS } from '@/features/peaks/utils/sort-options';
 
 interface Props {
   peaks: Peak[];
@@ -38,17 +39,6 @@ const COMPLETION_LABELS: Record<CompletionFilter, string> = {
   complete: 'Completed',
   incomplete: 'Incomplete',
 };
-
-const COMBINED_SORT_OPTIONS: { value: string; label: string; field: SortField; dir: SortDirection }[] = [
-  { value: 'name-asc',          label: 'Name A → Z',           field: 'name',         dir: 'asc'  },
-  { value: 'name-desc',         label: 'Name Z → A',           field: 'name',         dir: 'desc' },
-  { value: 'heightMetres-desc', label: 'Height (high → low)',  field: 'heightMetres', dir: 'desc' },
-  { value: 'heightMetres-asc',  label: 'Height (low → high)',  field: 'heightMetres', dir: 'asc'  },
-  { value: 'region-asc',        label: 'Region A → Z',         field: 'region',       dir: 'asc'  },
-  { value: 'region-desc',       label: 'Region Z → A',         field: 'region',       dir: 'desc' },
-  { value: 'completion-desc',   label: 'Completed first',      field: 'completion',   dir: 'desc' },
-  { value: 'completion-asc',    label: 'Incomplete first',     field: 'completion',   dir: 'asc'  },
-];
 
 export function PeakListClient({ peaks, serverCompletedIds }: Props) {
   const [search, setSearch] = useQueryState(
