@@ -11,6 +11,7 @@
 ```
 DO NOT write any application code until Phase 0 deliverables are complete and explicitly approved.
 DO NOT commit directly to `main` or `develop`.
+DO NOT open a PR without `--base develop` — `gh pr create` defaults to `main`.
 DO NOT move to the next ticket without explicit review approval.
 DO NOT access MongoDB or Dexie directly from components or route handlers.
 DO NOT hardcode Wainwright-specific logic anywhere in the application.
@@ -296,7 +297,7 @@ feature/34-dexie-offline-store
 
 - Always branch from `develop`
 - Never commit directly to `main` or `develop`
-- Open a Pull Request to `develop` on ticket completion
+- Open a Pull Request to `develop` on ticket completion — always pass `--base develop` explicitly: `gh pr create --base develop` (`gh pr create` defaults to the repo default branch which is `main`)
 - PR title must reference the issue: e.g. `Fix #12 — Setup Next.js project`
 - Squash merge into `develop`
 - PRs must pass type check, lint, and build before merge
@@ -963,7 +964,7 @@ Recommend and seek approval for changes before proceeding.
 ```
 Phase 0 first. Always.
 One ticket at a time. Wait for approval between tickets.
-One branch per ticket. Branch from develop. PR to develop.
+One branch per ticket. Branch from develop. PR to develop — always use `gh pr create --base develop`.
 No direct MongoDB or Dexie access in components or route handlers.
 No hardcoded list logic. Every feature is generic.
 dirty flag lives in Dexie only — never in MongoDB.
