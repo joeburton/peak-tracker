@@ -9,9 +9,6 @@ export function RegionalBreakdown({ regions }: Props) {
 
   return (
     <section aria-label="Regional breakdown">
-      <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-        By Region
-      </h2>
       <ul className="space-y-3" role="list">
         {regions.map((r) => (
           <li key={r.region}>
