@@ -199,9 +199,7 @@ function updateTicketsMarkdown(markdownPath, issueMap) {
     const escapedTitle = title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
     // Match the "**GitHub Issue:** TBC" line that follows this ticket heading
-    const pattern = new RegExp(
-      `(### ${escapedTitle}[\\s\\S]*?\\*\\*GitHub Issue:\\*\\*)\\s*TBC`,
-    );
+    const pattern = new RegExp(`(### ${escapedTitle}[\\s\\S]*?\\*\\*GitHub Issue:\\*\\*)\\s*TBC`);
 
     const replacement = `$1 [#${number}](${url})`;
     const newContent = content.replace(pattern, replacement);
@@ -240,9 +238,9 @@ async function main() {
   try {
     existingMilestones = await githubRest(
       'GET',
-      `/repos/${OWNER}/${REPO}/milestones?state=open&per_page=100`,
+      `/repos/${OWNER}/${REPO}/milestones?state=open&per_page=100`
     );
-  } catch (_) {
+  } catch {
     // Ignore — we'll try to create all milestones
   }
 
@@ -295,12 +293,10 @@ async function main() {
         }
       }
     `,
-      { login: OWNER },
+      { login: OWNER }
     );
 
-    const found = existingProjects?.user?.projectsV2?.nodes?.find(
-      (p) => p.title === PROJECT_TITLE,
-    );
+    const found = existingProjects?.user?.projectsV2?.nodes?.find((p) => p.title === PROJECT_TITLE);
 
     if (found) {
       projectId = found.id;
@@ -319,7 +315,7 @@ async function main() {
           }
         }
       `,
-        { ownerId: user.node_id, title: PROJECT_TITLE },
+        { ownerId: user.node_id, title: PROJECT_TITLE }
       );
 
       projectId = created.createProjectV2.projectV2.id;
@@ -359,7 +355,7 @@ async function main() {
 
     if (!milestoneNumber) {
       console.warn(
-        `  ⚠ No milestone number for M${ticket.milestoneNum} — skipping: ${ticket.title}`,
+        `  ⚠ No milestone number for M${ticket.milestoneNum} — skipping: ${ticket.title}`
       );
       failed++;
       continue;
@@ -392,7 +388,7 @@ async function main() {
               }
             }
           `,
-            { projectId, contentId: issue.node_id },
+            { projectId, contentId: issue.node_id }
           );
         } catch (projErr) {
           // Non-fatal — issue was still created

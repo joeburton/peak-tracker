@@ -17,11 +17,9 @@ export const queryKeys = {
   },
   progress: {
     all: () => ['progress'] as const,
-    byList: (userId: string, peakListSlug: string) =>
-      ['progress', userId, peakListSlug] as const,
+    byList: (userId: string, peakListSlug: string) => ['progress', userId, peakListSlug] as const,
   },
   statistics: {
-    byList: (userId: string, peakListSlug: string) =>
-      ['statistics', userId, peakListSlug] as const,
+    byList: (userId: string, peakListSlug: string) => ['statistics', userId, peakListSlug] as const,
   },
-} as const
+} as const;

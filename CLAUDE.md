@@ -18,6 +18,7 @@ DO NOT create placeholder or stub implementations.
 DO NOT assume a single peak list. Design every feature generically.
 DO NOT use middleware.ts — Next.js 16 uses proxy.ts instead.
 DO NOT alter any MongoDB database other than `peakTracker` unless explicitly instructed by the user.
+DO NOT create `__tests__` directories — all tests are colocated with their source files.
 ```
 
 ---
@@ -89,9 +90,13 @@ The application is a **generic peak-tracking platform**. It must support any UK 
 
 - **TanStack Query** — all remote data fetching and cache management
 
+### URL State
+
+- **nuqs** — URL search param state for search, filter, and sort (typed, validated, debounced)
+
 ### Client State
 
-- **Zustand** — ephemeral UI and application state
+- **Zustand** — ephemeral UI and application state with no URL representation (connectivity, sync, UI preferences, optimistic progress)
 
 ### Offline Storage
 
@@ -122,6 +127,25 @@ The application is a **generic peak-tracking platform**. It must support any UK 
 > This spec uses Next.js 15 (current stable). Update this note if 16 ships before project start.
 > Check if version 16 is available and use it if so.
 =======
+---
+
+## TESTING CONVENTIONS
+
+### Colocation rule (Non-Negotiable)
+
+Test files must live next to the source file they test. Never use a top-level `__tests__` directory.
+
+```
+src/app/page.tsx                                    → src/app/page.test.tsx
+src/lib/logger/index.ts                             → src/lib/logger/index.test.ts
+src/features/peaks/services/statistics.ts           → src/features/peaks/services/statistics.test.ts
+src/features/peaks/repositories/peak-repository.ts  → src/features/peaks/repositories/peak-repository.test.ts
+```
+
+- Unit and integration tests: `.test.tsx` / `.test.ts` colocated with their source file
+- E2E tests only: `e2e/` directory at the project root (Playwright)
+- The `src/__tests__/` directory is **excluded from vitest discovery** — never add files there
+
 ---
 
 ## NEXT.JS 16 — KEY CHANGES FROM 15
@@ -301,7 +325,7 @@ Depends on: #1, #4
 | `[Auth]`       | Clerk setup, proxy.ts, protected routes, userId integration      |
 | `[Database]`   | MongoDB setup, repository pattern, indexes, seed scripts         |
 | `[Offline]`    | Dexie setup, IndexedDB repositories, schema migrations           |
-| `[State]`      | Zustand stores, TanStack Query setup, query keys                 |
+| `[State]`      | nuqs parsers, Zustand stores, TanStack Query setup, query keys   |
 | `[Domain]`     | Peak lists, peak models, progress models, statistics service     |
 | `[UI]`         | Layout, navigation, search, filtering, sorting, statistics views |
 | `[Sync]`       | Synchronisation engine, API routes, conflict resolution          |
@@ -323,7 +347,7 @@ Create all milestones in GitHub before creating any issues.
 | Milestone 5 | State Management — Zustand stores, TanStack Query                  |
 | Milestone 6 | Core UI — layout, navigation, search, filters, sorting, statistics |
 | Milestone 7 | Synchronisation — API routes, sync engine, conflict resolution     |
-| Milestone 8 | PWA — service worker, offline support, install                     |
+| Milestone 8 | PWA — service worker, offline support, install prompt              |
 | Milestone 9 | Testing — coverage to 80%, E2E suite passing                       |
 
 ---
@@ -375,15 +399,24 @@ export interface UserProgress {
 ### Statistics (computed, not stored)
 
 ```ts
-export interface PeakListStatistics {
+export interface RegionalStatistics {
+  region: string;
   total: number;
   completed: number;
   remaining: number;
   percentageComplete: number;
 }
+
+export interface PeakListStatistics {
+  total: number;
+  completed: number;
+  remaining: number;
+  percentageComplete: number;
+  byRegion: RegionalStatistics[]; // sorted alphabetically by region name
+}
 ```
 
-Regional statistics must also be provided, derived from the same computation.
+Regional statistics are derived from the same computation as the overall stats and sorted alphabetically by region name.
 
 ---
 
@@ -535,15 +568,71 @@ All remote data fetching, caching, and sync must go through TanStack Query.
 
 ---
 
+### nuqs — URL Search Param State
+
+Search, filter, and sort state lives in the URL. `nuqs` is the library that manages this layer. It provides typed, validated URL params with zero manual sync boilerplate.
+
+**Why nuqs, not Zustand, for search/filter/sort:**
+
+URL params are the correct home for search, filter, and sort state because they provide browser history, page-refresh persistence, and shareable links for free. Mirroring URL state into a separate Zustand store requires a per-page mount ritual (read `useSearchParams()` → call init actions) and a per-interaction write-back ritual (`router.replace`). With `nuqs`, the URL param IS the state — no mirror, no ritual, no divergence risk.
+
+**Setup:**
+
+`NuqsAdapter` wraps the app in `src/app/layout.tsx`. This is required for `nuqs` to function in Next.js App Router.
+
+**Centralised parsers — `src/lib/nuqs/parsers.ts`:**
+
+All URL param keys and parsers are defined in one file. Never use raw URL param name strings in components — always import from this file.
+
+| Export            | Param      | Type             | Default  |
+| ----------------- | ---------- | ---------------- | -------- |
+| `SEARCH_PARAM`    | `?search=` | `string`         | `''`     |
+| `COMPLETION_PARAM`| `?completion=` | `CompletionFilter` | `'all'` |
+| `REGION_PARAM`    | `?region=` | `string`         | `''`     |
+| `SORT_PARAM`      | `?sort=`   | `SortField`      | `'name'` |
+| `DIR_PARAM`       | `?dir=`    | `SortDirection`  | `'asc'`  |
+
+Enum parsers (`completionParser`, `sortParser`, `dirParser`) derive their valid values directly from the Zod schemas (`CompletionFilterSchema.options`, `SortFieldSchema.options`, `SortDirectionSchema.options`) — adding a new value to a schema automatically makes it a valid URL param value.
+
+The sort UI collapses `SORT_PARAM` and `DIR_PARAM` into a single `<Select>` backed by `COMBINED_SORT_OPTIONS` from `src/features/peaks/utils/sort-options.ts`. The array is derived from `SortFieldSchema.options × SortDirectionSchema.options` — adding a new sort field to the schema automatically produces corresponding dropdown entries. A `SORT_FIELD_LABELS` map (`Record<SortField, Record<SortDirection, string>>`) provides human-readable labels; TypeScript enforces exhaustiveness, so a missing label is a compile error. The URL params are written separately on change — URL shape is unchanged.
+
+**Usage in components:**
+
+```ts
+import { useQueryState, useQueryStates } from 'nuqs'
+import {
+  SEARCH_PARAM, searchParser,
+  COMPLETION_PARAM, completionParser,
+  REGION_PARAM, regionParser,
+} from '@/lib/nuqs/parsers'
+
+// Single param — with debounce for search
+const [search, setSearch] = useQueryState(SEARCH_PARAM, searchParser.withOptions({ throttleMs: 300 }))
+
+// Multiple params at once
+const [{ completion, region }, setFilters] = useQueryStates({
+  [COMPLETION_PARAM]: completionParser,
+  [REGION_PARAM]: regionParser,
+})
+```
+
+**Rules:**
+
+- Never import raw URL param name strings — always use the key constants from `src/lib/nuqs/parsers.ts`
+- Never use `useSearchParams()` directly — use `useQueryState` / `useQueryStates` from `nuqs`
+- All parsers must be defined in `src/lib/nuqs/parsers.ts` — never inline a parser in a component
+- For search, merge throttle into the parser with `.withOptions({ throttleMs: 300 })` to debounce URL writes — `useQueryState` takes two arguments, not three
+- Use `{ history: 'replace' }` (the nuqs default for App Router) — filter changes must not create browser history entries
+- `nuqs` hooks are Client Component hooks — only call them from files with `'use client'`
+
+---
+
 ### Zustand — Client State
 
-Manages ephemeral UI and application state that does not need server persistence.
+Manages ephemeral UI and application state that has **no URL representation**. Search, filter, and sort state are handled by `nuqs` — not Zustand.
 
 | Store              | Responsibility                                       |
 | ------------------ | ---------------------------------------------------- |
-| Search             | Current search term, debounced value                 |
-| Filters            | Active filter selections (completion status, region) |
-| Sort               | Active sort field and direction                      |
 | UI Preferences     | Theme, view mode (list/map), sidebar state           |
 | Connectivity State | Online/offline status, connection quality            |
 | Sync State         | Sync in progress, last synced timestamp, error state |
@@ -555,6 +644,7 @@ Manages ephemeral UI and application state that does not need server persistence
 - All stores must be independently testable
 - Use `persist` middleware only where explicitly specified
 - Connectivity and sync state must stay consistent with Dexie and TanStack Query
+- Add `'use client'` at the top of every store file
 
 ---
 
@@ -687,6 +777,7 @@ scripts/
 src/
 ├── app/
 │   ├── page.tsx                        # Home — list all peak lists
+│   ├── page.test.tsx                   # Colocated unit test
 │   ├── sign-in/[[...sign-in]]/
 │   │   └── page.tsx                    # Clerk sign-in
 │   ├── sign-up/[[...sign-up]]/
@@ -724,6 +815,12 @@ src/
 │   ├── schema.ts
 │   └── repositories/
 │
+├── stores/                             # Zustand stores — one file per concern
+│   ├── ui-preferences.ts               # search/filter/sort handled by nuqs, not Zustand
+│   ├── connectivity.ts
+│   ├── sync.ts
+│   └── progress.ts
+│
 └── lib/
     ├── db/
     ├── queryKeys.ts
@@ -736,6 +833,8 @@ docs/
 ├── architecture-review.md
 ├── project-roadmap.md
 └── github-tickets.md
+
+e2e/                                    # Playwright E2E tests only
 ```
 
 ---
@@ -851,10 +950,14 @@ No hardcoded list logic. Every feature is generic.
 dirty flag lives in Dexie only — never in MongoDB.
 Statistics are computed server-side in a service layer.
 All query keys in src/lib/queryKeys.ts.
-Separate Zustand store per concern.
+nuqs handles search/filter/sort URL state — not Zustand.
+All nuqs parser keys and parsers centralised in src/lib/nuqs/parsers.ts.
+Never use raw URL param name strings — always import from parsers.ts.
+Separate Zustand store per concern (UI preferences, connectivity, sync, progress only).
 userId (Clerk) on every progress record — in MongoDB and Dexie.
 Clerk configured via proxy.ts — not middleware.ts (removed in Next.js 16).
 Seed data sourced from DoBIH. Validated. Idempotent.
 Toggle local/Atlas via MONGODB_URI only. No code changes.
 All quality gates must pass before a milestone is closed.
+Tests are colocated — src/app/page.tsx tests at src/app/page.test.tsx. Never use __tests__ directories.
 ```

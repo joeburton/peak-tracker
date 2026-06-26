@@ -17,13 +17,13 @@
 
 The project is organised into five delivery phases. Each phase has a clear outcome and a defined set of milestones.
 
-| Phase | Milestones | Outcome |
-|---|---|---|
-| **Phase 1 — Infrastructure** | M1, M2, M3 | Working project, auth, database with seeded data |
-| **Phase 2 — Offline & State** | M4, M5 | Local persistence, state management, offline-first foundation |
-| **Phase 3 — Core Product** | M6 | Full working UI — browse, search, filter, sort, toggle progress |
-| **Phase 4 — Sync & PWA** | M7, M8 | Cloud sync, offline install, service worker |
-| **Phase 5 — Quality** | M9 | 80% test coverage, full E2E suite, production-ready |
+| Phase                         | Milestones | Outcome                                                         |
+| ----------------------------- | ---------- | --------------------------------------------------------------- |
+| **Phase 1 — Infrastructure**  | M1, M2, M3 | Working project, auth, database with seeded data                |
+| **Phase 2 — Offline & State** | M4, M5     | Local persistence, state management, offline-first foundation   |
+| **Phase 3 — Core Product**    | M6         | Full working UI — browse, search, filter, sort, toggle progress |
+| **Phase 4 — Sync & PWA**      | M7, M8     | Cloud sync, offline install, service worker                     |
+| **Phase 5 — Quality**         | M9         | 80% test coverage, full E2E suite, production-ready             |
 
 No phase may begin until the previous phase's milestones are fully closed and approved.
 
@@ -31,17 +31,17 @@ No phase may begin until the previous phase's milestones are fully closed and ap
 
 ## Milestone Overview
 
-| # | Milestone | Focus | Complexity |
-|---|---|---|---|
-| 1 | Foundation | Project setup, tooling, CI, environment config | Medium |
-| 2 | Authentication | Clerk, proxy.ts, protected routes, userId | Medium |
-| 3 | Database | MongoDB, repositories, seed scripts, data sourcing | High |
-| 4 | Offline Architecture | Dexie, IndexedDB repositories, schema migrations | High |
-| 5 | State Management | Zustand stores, TanStack Query setup | Medium |
-| 6 | Core UI | Layout, navigation, search, filters, sorting, statistics | High |
-| 7 | Synchronisation | API routes, sync engine, conflict resolution | High |
-| 8 | PWA | Service worker, offline support, install prompt | Medium |
-| 9 | Testing | 80% unit coverage, E2E suite passing | Medium |
+| #   | Milestone            | Focus                                                    | Complexity |
+| --- | -------------------- | -------------------------------------------------------- | ---------- |
+| 1   | Foundation           | Project setup, tooling, CI, environment config           | Medium     |
+| 2   | Authentication       | Clerk, proxy.ts, protected routes, userId                | Medium     |
+| 3   | Database             | MongoDB, repositories, seed scripts, data sourcing       | High       |
+| 4   | Offline Architecture | Dexie, IndexedDB repositories, schema migrations         | High       |
+| 5   | State Management     | Zustand stores, TanStack Query setup                     | Medium     |
+| 6   | Core UI              | Layout, navigation, search, filters, sorting, statistics | High       |
+| 7   | Synchronisation      | API routes, sync engine, conflict resolution             | High       |
+| 8   | PWA                  | Service worker, offline support, install prompt          | Medium     |
+| 9   | Testing              | 80% unit coverage, E2E suite passing                     | Medium     |
 
 ---
 
@@ -70,6 +70,7 @@ Each milestone is a hard prerequisite for the next. No milestone may begin until
 **Goal:** A working Next.js 16 project with TypeScript strict mode, Tailwind, shadcn/ui, linting, type checking, and a CI pipeline that enforces all quality gates.
 
 **Tickets:**
+
 - `[Foundation]` Initialise Next.js 16 project with TypeScript strict mode
 - `[Foundation]` Configure Tailwind CSS and shadcn/ui
 - `[Foundation]` Configure ESLint and Prettier
@@ -86,6 +87,7 @@ Each milestone is a hard prerequisite for the next. No milestone may begin until
 **Dependencies:** None
 
 **Done when:**
+
 - `npm run typecheck` — zero errors
 - `npm run lint` — zero errors
 - `npm run build` — passing
@@ -102,6 +104,7 @@ Each milestone is a hard prerequisite for the next. No milestone may begin until
 **Goal:** Users can sign in with Google, Apple, or GitHub. All progress-related routes require authentication. `userId` is available server-side for use in repositories.
 
 **Tickets:**
+
 - `[Auth]` Verify Clerk + Next.js 16 `proxy.ts` compatibility — document findings
 - `[Auth]` Install and configure Clerk
 - `[Auth]` Implement `proxy.ts` for Clerk auth and route protection
@@ -114,6 +117,7 @@ Each milestone is a hard prerequisite for the next. No milestone may begin until
 **Dependencies:** Milestone 1
 
 **Done when:**
+
 - Sign in / sign up flows work with Google, Apple, and GitHub
 - Unauthenticated requests to progress routes return 401/redirect
 - `userId` is available server-side
@@ -127,6 +131,7 @@ Each milestone is a hard prerequisite for the next. No milestone may begin until
 **Goal:** MongoDB is connected, all collections have the correct indexes, and seed scripts populate the database with validated Wainwright and Munro data sourced from DoBIH.
 
 **Tickets:**
+
 - `[Database]` Set up MongoDB connection (toggle local/Atlas via `MONGODB_URI`)
 - `[Database]` Implement `PeakListRepository`
 - `[Database]` Implement `PeakRepository`
@@ -148,6 +153,7 @@ Each milestone is a hard prerequisite for the next. No milestone may begin until
 **Dependencies:** Milestone 2
 
 **Done when:**
+
 - `verify-seed.ts` exits zero: 214 Wainwrights, 282 Munros, all slugs unique, all coordinates and heights valid
 - All repositories are independently unit-testable with mock adapters
 - No raw MongoDB queries exist outside repository files
@@ -161,6 +167,7 @@ Each milestone is a hard prerequisite for the next. No milestone may begin until
 **Goal:** All user progress is persisted to IndexedDB via Dexie. The `dirty` flag correctly marks unsynced records. Schema is versioned and migratable.
 
 **Tickets:**
+
 - `[Offline]` Set up Dexie with initial schema version
 - `[Offline]` Implement `LocalProgressRepository` (Dexie)
 - `[Offline]` Implement `UserPreferencesRepository` (Dexie)
@@ -174,6 +181,7 @@ Each milestone is a hard prerequisite for the next. No milestone may begin until
 **Dependencies:** Milestone 3
 
 **Done when:**
+
 - Progress records are written to and read from Dexie
 - `dirty: true` is set on local changes; `dirty: false` after sync
 - `dirty` is confirmed absent from all MongoDB documents
@@ -189,6 +197,7 @@ Each milestone is a hard prerequisite for the next. No milestone may begin until
 **Goal:** All server state flows through TanStack Query. All client UI state flows through Zustand. Query keys are centralised. No raw `fetch` calls in components.
 
 **Tickets:**
+
 - `[State]` Set up TanStack Query provider
 - `[State]` Create `src/lib/queryKeys.ts` with all query key definitions
 - `[State]` Create Zustand store — search (term, debounced value)
@@ -205,6 +214,7 @@ Each milestone is a hard prerequisite for the next. No milestone may begin until
 **Dependencies:** Milestone 4
 
 **Done when:**
+
 - All Zustand stores independently unit-testable
 - TanStack Query provider configured with sensible defaults
 - `src/lib/queryKeys.ts` contains all query keys used in the application
@@ -219,6 +229,7 @@ Each milestone is a hard prerequisite for the next. No milestone may begin until
 **Goal:** The application is navigable and functional. Users can view all peak lists, browse peaks in a list, search, filter, sort, and see statistics. Progress toggling works (optimistically, offline-first).
 
 **Tickets:**
+
 - `[Domain]` Implement statistics service (`src/features/peaks/services/statistics.service.ts`)
 - `[UI]` Implement root layout (header, navigation, footer)
 - `[UI]` Implement home page — list all peak lists dynamically
@@ -242,6 +253,7 @@ Each milestone is a hard prerequisite for the next. No milestone may begin until
 **Note:** API route design is the gate ticket that opens Milestone 7 — it must be documented and approved before any sync implementation begins.
 
 **Done when:**
+
 - Statistics service is implemented and independently unit-tested
 - Home page lists all peak lists
 - Peak list page shows all peaks with working search, filters, sort, and statistics
@@ -260,6 +272,7 @@ Each milestone is a hard prerequisite for the next. No milestone may begin until
 **Goal:** Dirty local records sync to the server when the device is online. Conflict resolution (Last Write Wins) is correct. Sync state is surfaced in the UI.
 
 **Tickets:**
+
 - `[Sync]` Design and document API routes (approved before remaining tickets begin)
 - `[Sync]` Implement progress GET API route
 - `[Sync]` Implement progress PUT/PATCH API route
@@ -276,6 +289,7 @@ Each milestone is a hard prerequisite for the next. No milestone may begin until
 **Dependencies:** Milestone 6
 
 **Done when:**
+
 - Dirty records are pushed to server on reconnection
 - Server state is pulled and conflicts resolved correctly
 - Sync status is visible in the UI
@@ -292,6 +306,7 @@ Each milestone is a hard prerequisite for the next. No milestone may begin until
 **Goal:** The application is installable on mobile devices, works fully offline, and handles SW cache updates gracefully.
 
 **Tickets:**
+
 - `[PWA]` Verify next-pwa + Next.js 16 / Turbopack compatibility
 - `[PWA]` Configure next-pwa (or Serwist) with offline-first caching strategy
 - `[PWA]` Implement Web App Manifest (`manifest.json`)
@@ -305,6 +320,7 @@ Each milestone is a hard prerequisite for the next. No milestone may begin until
 **Dependencies:** Milestone 7
 
 **Done when:**
+
 - App installs on iOS and Android
 - Core functionality works with no network connection
 - Service Worker updates are handled gracefully
@@ -319,6 +335,7 @@ Each milestone is a hard prerequisite for the next. No milestone may begin until
 **Goal:** All quality gates pass. The project is production-ready.
 
 **Tickets:**
+
 - `[Testing]` Audit and fill unit test coverage gaps to reach ≥ 80%
 - `[Testing]` Write missing component tests (React Testing Library)
 - `[Testing]` Complete Playwright E2E suite — auth, peak list browsing, progress toggle, sync, offline
@@ -330,6 +347,7 @@ Each milestone is a hard prerequisite for the next. No milestone may begin until
 **Dependencies:** Milestone 8
 
 **Done when:**
+
 - `npm run test` — ≥ 80% coverage, all passing
 - `npm run test:e2e` — all passing
 - `npm run typecheck` — zero errors
@@ -340,18 +358,18 @@ Each milestone is a hard prerequisite for the next. No milestone may begin until
 
 ## Summary
 
-| Milestone | Tickets (est.) | Complexity | Depends on |
-|---|---|---|---|
-| 1 — Foundation | 10 | Medium | — |
-| 2 — Authentication | 6 | Medium | M1 |
-| 3 — Database | 15 | High | M2 |
-| 4 — Offline | 7 | High | M3 |
-| 5 — State | 10 | Medium | M4 |
-| 6 — Core UI | 15 | High | M5 |
-| 7 — Sync | 10 | High | M6 |
-| 8 — PWA | 7 | Medium | M7 |
-| 9 — Testing | 5 | Medium | M8 |
-| **Total** | **85** | | |
+| Milestone          | Tickets (est.) | Complexity | Depends on |
+| ------------------ | -------------- | ---------- | ---------- |
+| 1 — Foundation     | 10             | Medium     | —          |
+| 2 — Authentication | 6              | Medium     | M1         |
+| 3 — Database       | 15             | High       | M2         |
+| 4 — Offline        | 7              | High       | M3         |
+| 5 — State          | 10             | Medium     | M4         |
+| 6 — Core UI        | 15             | High       | M5         |
+| 7 — Sync           | 10             | High       | M6         |
+| 8 — PWA            | 7              | Medium     | M7         |
+| 9 — Testing        | 5              | Medium     | M8         |
+| **Total**          | **85**         |            |            |
 
 ---
 

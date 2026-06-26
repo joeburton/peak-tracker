@@ -19,18 +19,21 @@ The application must work fully offline, be installable on mobile devices, and s
 **Decision:** Next.js 16 with the App Router and Server Components by default.
 
 **Rationale:**
+
 - Server Components reduce client-side JavaScript, improving performance on mobile devices.
 - App Router enables fine-grained control over caching and data fetching via the new `use cache` directive and Partial Pre-rendering (PPR).
 - Turbopack (default in v16) provides significantly faster local development builds.
 - File-based routing with nested layouts suits the application's page hierarchy (`/`, `/peak-lists/[slug]`, auth pages).
 
 **Trade-offs:**
+
 - Next.js 16 is a relatively new major version; community resources and third-party compatibility are still maturing.
 - `middleware.ts` has been removed — all routing and auth middleware must use `proxy.ts`. This is a breaking change from Next.js 15 that affects Clerk integration.
 
 **Mitigation:** Verify Clerk documentation explicitly for Next.js 16 / `proxy.ts` compatibility before implementing Milestone 2.
 
 **Practical use of `use cache`:**
+
 - Peak list data fetched server-side uses `use cache` with a short TTL — list metadata changes infrequently.
 - Computed statistics use `React.cache` scoped per request — they are cheap to recompute and must reflect the current user's progress.
 - Auth-sensitive pages and progress data must never be cached at the page or component level.
@@ -42,6 +45,7 @@ The application must work fully offline, be installable on mobile devices, and s
 **Decision:** React 19.
 
 **Rationale:**
+
 - Required by Next.js 16.
 - Server Actions and improved Suspense primitives simplify data loading patterns.
 - Compiler optimisations reduce the need for manual `useMemo` and `useCallback`.
@@ -53,6 +57,7 @@ The application must work fully offline, be installable on mobile devices, and s
 **Decision:** TypeScript with `strict: true` and zero `any`.
 
 **Rationale:**
+
 - Catches entire classes of bugs at compile time.
 - Essential for a long-lived, extensible platform that multiple contributors may work on.
 - Zod schemas provide runtime safety at all external data boundaries, complementing TypeScript's compile-time guarantees.
@@ -64,6 +69,7 @@ The application must work fully offline, be installable on mobile devices, and s
 **Decision:** Clerk for authentication with social login (Google, Apple, GitHub).
 
 **Rationale:**
+
 - Pre-built, accessible UI components eliminate the risk of shipping insecure auth flows.
 - `userId` provided by Clerk flows directly into progress records in both MongoDB and Dexie.
 - Free tier supports 10,000 monthly active users — sufficient for the initial launch.
@@ -80,29 +86,94 @@ The application must work fully offline, be installable on mobile devices, and s
 **Decision:** TanStack Query for all remote data fetching and cache management.
 
 **Rationale:**
+
 - Declarative, hook-based API reduces boilerplate.
 - Built-in stale-while-revalidate, background refetching, and optimistic updates align with the offline-first sync model.
 - All query keys are centralised in `src/lib/queryKeys.ts` — avoids cache key collisions and simplifies invalidation.
 
 **Rules:**
+
 - No raw `fetch` calls in components.
 - Every query defines explicit `staleTime` and `gcTime`.
 - Mutations invalidate relevant query keys on success.
 
 ---
 
-### 2.6 Client State — Zustand
+### 2.6 URL State — nuqs
 
-**Decision:** Zustand for ephemeral UI and application state.
+**Decision:** `nuqs` for all URL search param state (search, filter, sort).
 
 **Rationale:**
+
+Search, filter, and sort state belongs in the URL — it provides browser history, page-refresh persistence, and shareable links. The previous design mirrored URL state into Zustand stores using a two-layer contract (init actions on mount, `router.replace` write-back on interaction). This created a fragile per-page mount ritual: five separate init calls, each a place where a developer could forget one and introduce a silent state divergence. `nuqs` eliminates this entirely — the URL param IS the state, with no mirror and no ritual.
+
+**Architecture:**
+
+`NuqsAdapter` wraps the application in `src/app/layout.tsx`.
+
+All URL param keys and parsers are centralised in `src/lib/nuqs/parsers.ts`. This is the single source of truth — analogous to `src/lib/queryKeys.ts` for TanStack Query.
+
+| Param            | Key          | Type               | Default  | Parser            |
+| ---------------- | ------------ | ------------------ | -------- | ----------------- |
+| Search           | `?search=`   | `string`           | `''`     | `searchParser`    |
+| Completion filter| `?completion=` | `CompletionFilter` | `'all'`  | `completionParser`|
+| Region filter    | `?region=`   | `string`           | `''`     | `regionParser`    |
+| Sort field       | `?sort=`     | `SortField`        | `'name'` | `sortParser`      |
+| Sort direction   | `?dir=`      | `SortDirection`    | `'asc'`  | `dirParser`       |
+
+Enum parsers derive their valid values from Zod schemas (`CompletionFilterSchema.options`, `SortFieldSchema.options`, `SortDirectionSchema.options`) — the two stay in sync automatically.
+
+**Usage pattern in components:**
+
+```ts
+import { useQueryState, useQueryStates } from 'nuqs'
+import { SEARCH_PARAM, searchParser, COMPLETION_PARAM, completionParser } from '@/lib/nuqs/parsers'
+
+// Search — merge throttle into the parser with .withOptions() to debounce URL writes
+const [search, setSearch] = useQueryState(SEARCH_PARAM, searchParser.withOptions({ throttleMs: 300 }))
+
+// Filters — group with useQueryStates for atomic updates
+const [{ completion, region }, setFilters] = useQueryStates({
+  [COMPLETION_PARAM]: completionParser,
+  [REGION_PARAM]: regionParser,
+})
+```
+
+Invalid URL param values (e.g. `?completion=bogus`) are rejected by the parser and fall back to the default — no runtime cast, no silent corruption.
+
+**Rules:**
+
+- Never use raw URL param name strings — always import from `src/lib/nuqs/parsers.ts`
+- Never use `useSearchParams()` directly — use `useQueryState` / `useQueryStates`
+- All parsers defined in `src/lib/nuqs/parsers.ts` — never inline in a component
+- Search debounce: merge throttle into the parser with `.withOptions({ throttleMs: 300 })` — `useQueryState` takes two arguments, not three
+- `nuqs` hooks are Client Component hooks — only in files with `'use client'`
+
+---
+
+### 2.7 Client State — Zustand
+
+**Decision:** Zustand for ephemeral UI and application state that has no URL representation.
+
+**Rationale:**
+
 - Minimal API with no boilerplate.
-- Each concern is a separate slice (search, filters, sort, UI preferences, connectivity, sync state, progress state).
+- Each concern is a separate store (UI preferences, connectivity, sync state, progress state).
 - Independently testable stores.
 - `persist` middleware used only where explicitly specified.
 
+**Scope (post-nuqs):** Zustand stores cover only the four concerns below. Search, filter, and sort state moved to `nuqs`.
+
+| Store              | Responsibility                                       |
+| ------------------ | ---------------------------------------------------- |
+| UI Preferences     | Theme, view mode (list/map), sidebar state           |
+| Connectivity State | Online/offline status, connection quality            |
+| Sync State         | Sync in progress, last synced timestamp, error state |
+| Progress State     | Locally tracked progress before sync confirmation    |
+
 **User preferences split — Zustand vs Dexie:**
 Two layers handle persistence for different reasons:
+
 - **Zustand `persist` (localStorage):** device-local UI state — theme, view mode (`list` | `map`), sidebar open/closed. These are fast, synchronous, and intentionally device-specific. They do not need to sync across devices.
 - **Dexie (IndexedDB):** substantive user preferences — units (`metric` | `imperial`), display settings. These are slower to read but designed for future cross-device sync via the same sync engine that handles progress. They must go through the `UserPreferencesRepository`.
 
@@ -115,17 +186,18 @@ This boundary is non-negotiable. Zustand `persist` must never be used for prefer
 **Decision:** Dexie as the IndexedDB abstraction layer.
 
 **Rationale:**
+
 - Clean, Promise-based API over the raw IndexedDB API.
 - Built-in schema versioning and migrations.
 - All Dexie access is behind a repository pattern — no direct table access in components or hooks.
 
 **Three Dexie tables:**
 
-| Table | Repository | Purpose |
-|---|---|---|
-| `progress` | `LocalProgressRepository` | Peak completion records, `dirty` flag, sync timestamps |
+| Table             | Repository                  | Purpose                                                         |
+| ----------------- | --------------------------- | --------------------------------------------------------------- |
+| `progress`        | `LocalProgressRepository`   | Peak completion records, `dirty` flag, sync timestamps          |
 | `userPreferences` | `UserPreferencesRepository` | Units, display settings — designed for future cross-device sync |
-| `syncMetadata` | `SyncMetadataRepository` | Last sync timestamp, pending change tracking |
+| `syncMetadata`    | `SyncMetadataRepository`    | Last sync timestamp, pending change tracking                    |
 
 **Key constraint:** The `dirty` flag lives in Dexie only and must never be persisted to MongoDB. It is a sync concern, not a domain concern.
 
@@ -136,6 +208,7 @@ This boundary is non-negotiable. Zustand `persist` must never be used for prefer
 **Decision:** MongoDB with the database name `peakTracker`.
 
 **Rationale:**
+
 - Document model suits the peak and progress data shapes.
 - Local development uses a local MongoDB instance; production uses Atlas. Toggle is via `MONGODB_URI` only — no code changes required.
 - All MongoDB access is behind a repository pattern — no raw queries in route handlers or business logic.
@@ -149,6 +222,7 @@ This boundary is non-negotiable. Zustand `persist` must never be used for prefer
 **Decision:** Zod for all external data boundaries.
 
 **Rationale:**
+
 - Runtime type safety at API responses, seed data ingestion, and form inputs.
 - Integrates naturally with TypeScript — infer types from schemas.
 - Seed scripts must validate every record against Zod schemas before insertion.
@@ -160,6 +234,7 @@ This boundary is non-negotiable. Zustand `persist` must never be used for prefer
 **Decision:** Tailwind CSS v4 for utility-first styling; shadcn/ui for accessible, composable components.
 
 **Rationale:**
+
 - Tailwind's utility classes are well-suited to mobile-first, responsive design.
 - shadcn/ui components are unstyled at their core and fully customisable — no vendor lock-in.
 - Components are copied into the codebase, so upgrades are controlled and explicit.
@@ -174,6 +249,7 @@ This boundary is non-negotiable. Zustand `persist` must never be used for prefer
 **Decision:** Vitest (unit/integration), React Testing Library (component tests), Playwright (E2E).
 
 **Rationale:**
+
 - Vitest is fast and has native ESM support — ideal for a Next.js 16 project.
 - React Testing Library encourages testing behaviour over implementation.
 - Playwright covers cross-browser E2E scenarios including offline PWA behaviour.
@@ -187,6 +263,7 @@ This boundary is non-negotiable. Zustand `persist` must never be used for prefer
 **Decision:** next-pwa with a custom Service Worker.
 
 **Rationale:**
+
 - next-pwa integrates cleanly with Next.js and handles the Workbox configuration.
 - Offline-first caching strategy (cache-first for static assets, network-first for API responses).
 - Install prompt support for mobile home screen installation.
@@ -235,6 +312,7 @@ src/features/peaks/
 ```
 
 **Important distinction:** `src/features/peaks/repositories/` holds repository **interfaces** (TypeScript `interface` definitions). Concrete implementations live in:
+
 - `src/lib/db/repositories/` — MongoDB implementations
 - `src/db/repositories/` — Dexie implementations
 
@@ -255,6 +333,7 @@ The statistics service lives at `src/features/peaks/services/statistics.service.
 ### 3.5 Mobile-First Architecture
 
 Mobile-first is Core Principle #2. In practice:
+
 - All Tailwind CSS classes are written mobile-first — default styles target mobile viewports, breakpoints scale up
 - The primary use case is a hiker in the field with poor or intermittent connectivity — the offline-first sync model is designed for this
 - Server Components by default keeps the client-side JavaScript bundle lean, which is critical for slow mobile networks
@@ -266,6 +345,7 @@ Mobile-first is Core Principle #2. In practice:
 ### 3.6 Accessibility Architecture
 
 Accessibility-first is Core Principle #3. WCAG 2.1 AA is the minimum bar:
+
 - shadcn/ui provides accessible component foundations — custom overrides must not regress accessibility
 - All interactive elements must be keyboard navigable and have visible focus indicators
 - axe-core is integrated into the Playwright E2E suite — zero violations are required on every page before Milestone 6 closes
@@ -277,6 +357,7 @@ Accessibility-first is Core Principle #3. WCAG 2.1 AA is the minimum bar:
 ### 3.7 Performance Considerations
 
 The peak list page renders 282+ items with concurrent client-side search, filter, and sort:
+
 - **Client-side filtering/sorting:** Applied in memory to the full peak collection. At 282 items this is acceptable without virtualisation. If future lists grow to thousands of peaks, TanStack Virtual can be introduced without architectural change — the repository and state layers require no modification.
 - **Statistics computation:** Computed server-side once per request via `React.cache`. Not re-derived on every render.
 - **Search debounce:** 300ms debounce on the search input prevents excessive re-renders per keystroke.
@@ -289,13 +370,13 @@ The peak list page renders 282+ items with concurrent client-side search, filter
 
 CLAUDE.md documents five future feature shapes the architecture must support without redesign:
 
-| Feature | Shape | Architectural implication |
-|---|---|---|
-| Notes | `{ userId, peakId, notes: string }` | New MongoDB collection + Dexie table + repository pair. No changes to existing code. |
-| Walk History | `{ userId, peakId, completedAt: Date }` | Time-series data. New collection. May require pagination for prolific walkers. |
-| Photos | `{ userId, peakId, imageUrl: string }` | Object storage (S3/R2) for files; URL reference in MongoDB. New feature folder. |
-| Routes | `{ userId, peakId, gpxFile: string }` | File storage + GPX parsing service. New feature folder. |
-| Achievements | Computed from progress data | Server-side service only. No new storage required initially. |
+| Feature      | Shape                                   | Architectural implication                                                            |
+| ------------ | --------------------------------------- | ------------------------------------------------------------------------------------ |
+| Notes        | `{ userId, peakId, notes: string }`     | New MongoDB collection + Dexie table + repository pair. No changes to existing code. |
+| Walk History | `{ userId, peakId, completedAt: Date }` | Time-series data. New collection. May require pagination for prolific walkers.       |
+| Photos       | `{ userId, peakId, imageUrl: string }`  | Object storage (S3/R2) for files; URL reference in MongoDB. New feature folder.      |
+| Routes       | `{ userId, peakId, gpxFile: string }`   | File storage + GPX parsing service. New feature folder.                              |
+| Achievements | Computed from progress data             | Server-side service only. No new storage required initially.                         |
 
 All future features are `userId`-scoped and `peakId`-scoped — consistent with the existing pattern. Each will get its own feature folder (`src/features/<feature>/`), its own repository pair (MongoDB + Dexie), and its own sync behaviour. No changes to the peaks or progress layers are required.
 
@@ -308,6 +389,7 @@ All future features are `userId`-scoped and `peakId`-scoped — consistent with 
 Conflict resolution is based on `updatedAt` timestamp and `version` number.
 
 **Explicitly excluded:**
+
 - Event sourcing
 - CQRS
 - Operation queues
@@ -330,11 +412,13 @@ Conflict resolution is based on `updatedAt` timestamp and `version` number.
 **Source:** Database of British and Irish Hills (DoBIH) — the canonical public reference for UK hill data.
 
 All seed scripts must be:
+
 - Idempotent (safe to run multiple times)
 - Validated against Zod schemas before insertion
 - Verified with `verify-seed.ts`
 
 `verify-seed.ts` must confirm:
+
 - 214 Wainwrights present
 - 282 Munros present
 - All slugs unique
@@ -347,14 +431,14 @@ All seed scripts must be:
 
 ## 6. Risks and Mitigations
 
-| Risk | Likelihood | Impact | Mitigation |
-|---|---|---|---|
-| Clerk does not yet fully support Next.js 16 `proxy.ts` | Medium | High | Verify Clerk docs before Milestone 2. Evaluate alternative auth if needed. |
-| DoBIH data quality issues (missing coordinates, invalid heights) | Medium | Medium | Zod validation in seed scripts; `verify-seed.ts` exits non-zero on failure. |
-| IndexedDB storage limits on mobile devices | Low | Medium | Monitor storage usage; implement storage quota warnings. |
-| Service Worker cache invalidation issues on PWA updates | Medium | Medium | Version the SW cache; implement update-on-reload strategy. |
-| next-pwa compatibility with Next.js 16 / Turbopack | Medium | High | Verify compatibility before Milestone 8; consider Serwist as an alternative. |
-| `peakListSlug` rename requiring bulk peak updates | Low | Low | Documented as a known limitation. Admin tooling can handle if needed. |
+| Risk                                                             | Likelihood | Impact | Mitigation                                                                   |
+| ---------------------------------------------------------------- | ---------- | ------ | ---------------------------------------------------------------------------- |
+| Clerk does not yet fully support Next.js 16 `proxy.ts`           | Medium     | High   | Verify Clerk docs before Milestone 2. Evaluate alternative auth if needed.   |
+| DoBIH data quality issues (missing coordinates, invalid heights) | Medium     | Medium | Zod validation in seed scripts; `verify-seed.ts` exits non-zero on failure.  |
+| IndexedDB storage limits on mobile devices                       | Low        | Medium | Monitor storage usage; implement storage quota warnings.                     |
+| Service Worker cache invalidation issues on PWA updates          | Medium     | Medium | Version the SW cache; implement update-on-reload strategy.                   |
+| next-pwa compatibility with Next.js 16 / Turbopack               | Medium     | High   | Verify compatibility before Milestone 8; consider Serwist as an alternative. |
+| `peakListSlug` rename requiring bulk peak updates                | Low        | Low    | Documented as a known limitation. Admin tooling can handle if needed.        |
 
 ---
 
@@ -373,14 +457,14 @@ All seed scripts must be:
 
 ## 8. Trade-offs
 
-| Decision | Trade-off |
-|---|---|
+| Decision                        | Trade-off                                                                                                                                       |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | Snapshot Sync (Last Write Wins) | Simple to implement; does not handle fine-grained conflict resolution. Acceptable for a progress-tracking use case where data loss risk is low. |
-| `peakListSlug` as foreign key | Simple joins; renaming a list requires updating all peaks. Documented known limitation. |
-| shadcn/ui (copied components) | Upgrades are manual and controlled. No automatic updates from upstream. |
-| Server Components by default | Requires careful identification of Client Component boundaries. Increases developer discipline requirement. |
-| MongoDB (document model) | No relational joins; any aggregation across collections requires application-layer assembly. Acceptable given the data shapes. |
-| Dexie for IndexedDB | Adds a dependency; however, raw IndexedDB API is too verbose and error-prone for production use. |
+| `peakListSlug` as foreign key   | Simple joins; renaming a list requires updating all peaks. Documented known limitation.                                                         |
+| shadcn/ui (copied components)   | Upgrades are manual and controlled. No automatic updates from upstream.                                                                         |
+| Server Components by default    | Requires careful identification of Client Component boundaries. Increases developer discipline requirement.                                     |
+| MongoDB (document model)        | No relational joins; any aggregation across collections requires application-layer assembly. Acceptable given the data shapes.                  |
+| Dexie for IndexedDB             | Adds a dependency; however, raw IndexedDB API is too verbose and error-prone for production use.                                                |
 
 ---
 

@@ -47,8 +47,7 @@ next-env.d.ts
 
 notes.txt
 
-# Claude Code settings (may contain secrets)
-.claude/settings.json
+# Claude Code settings
 .claude/settings.local.json
 
 # Playwright
