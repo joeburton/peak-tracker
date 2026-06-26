@@ -136,7 +136,7 @@ describe('PeakListPage', () => {
     expect(calledProps).toMatchObject({ statistics: mockStatistics });
   });
 
-  it('passes peaks and serverCompletedIds to PeakListClient', async () => {
+  it('passes peaks, serverCompletedIds, and userId to PeakListClient', async () => {
     mockGetProgress.mockResolvedValue(['p1']);
     const Page = await PeakListPage({ params: Promise.resolve({ slug: 'wainwrights' }) });
     render(Page);
@@ -144,6 +144,7 @@ describe('PeakListPage', () => {
     expect(calledProps).toMatchObject({
       peaks: mockPeaks,
       serverCompletedIds: ['p1'],
+      userId: 'user-123',
     });
   });
 
@@ -154,12 +155,12 @@ describe('PeakListPage', () => {
     expect(calledProps).not.toHaveProperty('statistics');
   });
 
-  it('passes empty serverCompletedIds when user is unauthenticated', async () => {
+  it('passes null userId and empty serverCompletedIds when unauthenticated', async () => {
     mockAuth.mockResolvedValue({ userId: null });
     const Page = await PeakListPage({ params: Promise.resolve({ slug: 'wainwrights' }) });
     render(Page);
     const [calledProps] = mockPeakListClient.mock.calls[0] as [Record<string, unknown>];
-    expect(calledProps).toMatchObject({ serverCompletedIds: [] });
+    expect(calledProps).toMatchObject({ serverCompletedIds: [], userId: null });
   });
 
   it('fetches peak list, peaks, and progress concurrently', async () => {
