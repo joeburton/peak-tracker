@@ -13,8 +13,8 @@ interface StatProps {
 function Stat({ term, value }: StatProps) {
   return (
     <div className="flex items-baseline gap-1.5">
-      <dd className="text-xl font-semibold tabular-nums">{value}</dd>
-      <dt className="text-xs text-muted-foreground">{term}</dt>
+      <dt className="order-2 text-xs text-muted-foreground">{term}</dt>
+      <dd className="order-1 text-xl font-semibold tabular-nums">{value}</dd>
     </div>
   );
 }
