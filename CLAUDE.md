@@ -69,7 +69,11 @@ The application is a **generic peak-tracking platform**. It must support any UK 
 
 ### Frontend
 
+<<<<<<< HEAD
+- **Next.js 16** (App Router, Server Components by default)
+=======
 - **Next.js 16** (current stable: 16.2.x, App Router, Server Components by default)
+>>>>>>> develop
 - **React 19**
 - **TypeScript** (strict mode)
 - **Tailwind CSS**
@@ -118,6 +122,30 @@ The application is a **generic peak-tracking platform**. It must support any UK 
 - **next-pwa**
 - **Service Worker**
 
+<<<<<<< HEAD
+> **Note on Next.js version:** The original spec referenced Next.js 16 which does not exist.
+> This spec uses Next.js 15 (current stable). Update this note if 16 ships before project start.
+> Check if version 16 is available and use it if so.
+=======
+---
+
+## TESTING CONVENTIONS
+
+### Colocation rule (Non-Negotiable)
+
+Test files must live next to the source file they test. Never use a top-level `__tests__` directory.
+
+```
+src/app/page.tsx                                    → src/app/page.test.tsx
+src/lib/logger/index.ts                             → src/lib/logger/index.test.ts
+src/features/peaks/services/statistics.ts           → src/features/peaks/services/statistics.test.ts
+src/features/peaks/repositories/peak-repository.ts  → src/features/peaks/repositories/peak-repository.test.ts
+```
+
+- Unit and integration tests: `.test.tsx` / `.test.ts` colocated with their source file
+- E2E tests only: `e2e/` directory at the project root (Playwright)
+- The `src/__tests__/` directory is **excluded from vitest discovery** — never add files there
+
 ---
 
 ## TESTING CONVENTIONS
@@ -151,6 +179,7 @@ These are breaking or significant changes that affect implementation decisions.
 | `proxy.ts`              | New network boundary entry point — Clerk and any request interception goes here |
 
 Before implementing the Auth milestone, review the Clerk documentation for Next.js 16 / `proxy.ts` compatibility and confirm the integration approach.
+>>>>>>> develop
 
 ---
 

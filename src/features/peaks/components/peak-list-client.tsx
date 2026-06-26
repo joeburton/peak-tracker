@@ -223,7 +223,7 @@ export function PeakListClient({ peaks, serverCompletedIds, userId }: Props) {
                         ? `Mark ${peak.name} as incomplete`
                         : `Mark ${peak.name} as complete`
                     }
-                    className="group flex w-full items-center justify-between gap-4 py-3 -mx-1 rounded px-1 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    className="group flex w-full items-center justify-between gap-4 py-3 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:rounded"
                   >
                     {rowContent}
                   </button>
