@@ -10,7 +10,7 @@ const {
   mockAuth,
   mockPeakListClient,
   mockStatisticsComponent,
-  mockRegionalBreakdownAccordion,
+  mockRegionalBreakdownDialog,
 } = vi.hoisted(() => ({
   mockGetPeakList: vi.fn(),
   mockGetPeaks: vi.fn(),
@@ -20,7 +20,7 @@ const {
   mockAuth: vi.fn(),
   mockPeakListClient: vi.fn(),
   mockStatisticsComponent: vi.fn(),
-  mockRegionalBreakdownAccordion: vi.fn(),
+  mockRegionalBreakdownDialog: vi.fn(),
 }));
 
 vi.mock('@/features/peaks/services/peak-list.service', () => ({
@@ -47,8 +47,8 @@ vi.mock('@/features/peaks/components/peak-list-client', () => ({
 vi.mock('@/features/peaks/components/statistics', () => ({
   Statistics: mockStatisticsComponent,
 }));
-vi.mock('@/features/peaks/components/regional-breakdown-accordion', () => ({
-  RegionalBreakdownAccordion: mockRegionalBreakdownAccordion,
+vi.mock('@/features/peaks/components/regional-breakdown-dialog', () => ({
+  RegionalBreakdownDialog: mockRegionalBreakdownDialog,
 }));
 
 import PeakListPage from './page';
@@ -94,7 +94,7 @@ describe('PeakListPage', () => {
     mockAuth.mockReset();
     mockPeakListClient.mockReset();
     mockStatisticsComponent.mockReset();
-    mockRegionalBreakdownAccordion.mockReset();
+    mockRegionalBreakdownDialog.mockReset();
 
     mockGetPeakList.mockResolvedValue(mockPeakList);
     mockGetPeaks.mockResolvedValue(mockPeaks);
@@ -104,7 +104,7 @@ describe('PeakListPage', () => {
     mockNotFound.mockImplementation(() => { throw new Error('NEXT_NOT_FOUND'); });
     mockPeakListClient.mockReturnValue(<div data-testid="peak-list-client" />);
     mockStatisticsComponent.mockReturnValue(<div data-testid="statistics" />);
-    mockRegionalBreakdownAccordion.mockReturnValue(<div data-testid="regional-breakdown-accordion" />);
+    mockRegionalBreakdownDialog.mockReturnValue(<div data-testid="regional-breakdown-dialog" />);
   });
 
   it('renders the peak list name as the page heading', async () => {
@@ -169,21 +169,21 @@ describe('PeakListPage', () => {
     expect(mockGetProgress).toHaveBeenCalledWith('user-123');
   });
 
-  it('renders RegionalBreakdownAccordion with byRegion data when regions are present', async () => {
+  it('renders RegionalBreakdownDialog with byRegion data when regions are present', async () => {
     const byRegion = [
       { region: 'Northern Fells', total: 18, completed: 3, remaining: 15, percentageComplete: 16.7 },
     ];
     mockComputeStatistics.mockReturnValue({ ...mockStatistics, byRegion });
     const Page = await PeakListPage({ params: Promise.resolve({ slug: 'wainwrights' }) });
     render(Page);
-    const [calledProps] = mockRegionalBreakdownAccordion.mock.calls[0] as [Record<string, unknown>];
+    const [calledProps] = mockRegionalBreakdownDialog.mock.calls[0] as [Record<string, unknown>];
     expect(calledProps).toMatchObject({ regions: byRegion });
   });
 
-  it('does not render RegionalBreakdownAccordion when byRegion is empty', async () => {
+  it('still renders RegionalBreakdownDialog when byRegion is empty (component handles null case internally)', async () => {
     mockComputeStatistics.mockReturnValue({ ...mockStatistics, byRegion: [] });
     const Page = await PeakListPage({ params: Promise.resolve({ slug: 'wainwrights' }) });
     render(Page);
-    expect(mockRegionalBreakdownAccordion).not.toHaveBeenCalled();
+    expect(mockRegionalBreakdownDialog).toHaveBeenCalled();
   });
 });
