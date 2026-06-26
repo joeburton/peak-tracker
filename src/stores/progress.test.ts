@@ -2,12 +2,13 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { useProgressStore } from './progress'
 
 beforeEach(() => {
-  useProgressStore.setState({ pendingCompletions: new Set() })
+  useProgressStore.setState({ pendingCompletions: new Set(), pendingRemovals: new Set() })
 })
 
 describe('useProgressStore — initial state', () => {
-  it('starts with an empty pendingCompletions set', () => {
+  it('starts with empty pendingCompletions and pendingRemovals sets', () => {
     expect(useProgressStore.getState().pendingCompletions.size).toBe(0)
+    expect(useProgressStore.getState().pendingRemovals.size).toBe(0)
   })
 })
 
@@ -69,17 +70,56 @@ describe('useProgressStore — removeCompletion', () => {
   })
 })
 
-describe('useProgressStore — clearPending', () => {
-  it('removes all peakIds from pendingCompletions', () => {
-    useProgressStore.getState().addCompletion('peak-1')
-    useProgressStore.getState().addCompletion('peak-2')
-    useProgressStore.getState().addCompletion('peak-3')
-    useProgressStore.getState().clearPending()
-    expect(useProgressStore.getState().pendingCompletions.size).toBe(0)
+describe('useProgressStore — addRemoval', () => {
+  it('adds a peakId to pendingRemovals', () => {
+    useProgressStore.getState().addRemoval('peak-1')
+    expect(useProgressStore.getState().pendingRemovals.has('peak-1')).toBe(true)
   })
 
-  it('is a no-op when the set is already empty', () => {
+  it('is idempotent', () => {
+    useProgressStore.getState().addRemoval('peak-1')
+    useProgressStore.getState().addRemoval('peak-1')
+    expect(useProgressStore.getState().pendingRemovals.size).toBe(1)
+  })
+
+  it('does not affect pendingCompletions', () => {
+    useProgressStore.getState().addCompletion('peak-2')
+    useProgressStore.getState().addRemoval('peak-1')
+    expect(useProgressStore.getState().pendingCompletions.has('peak-2')).toBe(true)
+  })
+
+  it('returns a new Set reference (immutable update)', () => {
+    const before = useProgressStore.getState().pendingRemovals
+    useProgressStore.getState().addRemoval('peak-1')
+    expect(useProgressStore.getState().pendingRemovals).not.toBe(before)
+  })
+})
+
+describe('useProgressStore — removeRemoval', () => {
+  it('removes a peakId from pendingRemovals', () => {
+    useProgressStore.getState().addRemoval('peak-1')
+    useProgressStore.getState().removeRemoval('peak-1')
+    expect(useProgressStore.getState().pendingRemovals.has('peak-1')).toBe(false)
+  })
+
+  it('is a no-op when peakId is not present', () => {
+    useProgressStore.getState().removeRemoval('peak-not-present')
+    expect(useProgressStore.getState().pendingRemovals.size).toBe(0)
+  })
+})
+
+describe('useProgressStore — clearPending', () => {
+  it('clears both pendingCompletions and pendingRemovals', () => {
+    useProgressStore.getState().addCompletion('peak-1')
+    useProgressStore.getState().addRemoval('peak-2')
     useProgressStore.getState().clearPending()
     expect(useProgressStore.getState().pendingCompletions.size).toBe(0)
+    expect(useProgressStore.getState().pendingRemovals.size).toBe(0)
+  })
+
+  it('is a no-op when both sets are already empty', () => {
+    useProgressStore.getState().clearPending()
+    expect(useProgressStore.getState().pendingCompletions.size).toBe(0)
+    expect(useProgressStore.getState().pendingRemovals.size).toBe(0)
   })
 })

@@ -55,7 +55,7 @@ export default async function PeakListPage({ params }: Props) {
         </div>
         <div className="h-px bg-border" />
         <Suspense fallback={<PeakListSkeleton />}>
-          <PeakListClient peaks={peaks} serverCompletedIds={serverCompletedIds} />
+          <PeakListClient peaks={peaks} serverCompletedIds={serverCompletedIds} userId={userId} />
         </Suspense>
       </div>
     </div>

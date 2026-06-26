@@ -1,11 +1,23 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
-const { mockUseQueryState, mockUseQueryStates, mockUseProgressStore } = vi.hoisted(() => ({
-  mockUseQueryState: vi.fn(),
-  mockUseQueryStates: vi.fn(),
-  mockUseProgressStore: vi.fn(),
-}));
+const {
+  mockUseQueryState,
+  mockUseQueryStates,
+  mockUseProgressStore,
+  mockToggle,
+  mockUseToggleProgress,
+} = vi.hoisted(() => {
+  const mockToggle = vi.fn();
+  return {
+    mockUseQueryState: vi.fn(),
+    mockUseQueryStates: vi.fn(),
+    mockUseProgressStore: vi.fn(),
+    mockToggle,
+    mockUseToggleProgress: vi.fn(() => ({ toggle: mockToggle })),
+  };
+});
 
 vi.mock('nuqs', () => ({
   useQueryState: mockUseQueryState,
@@ -13,6 +25,9 @@ vi.mock('nuqs', () => ({
 }));
 vi.mock('@/stores/progress', () => ({
   useProgressStore: mockUseProgressStore,
+}));
+vi.mock('@/features/peaks/hooks/use-toggle-progress', () => ({
+  useToggleProgress: mockUseToggleProgress,
 }));
 
 import { PeakListClient } from './peak-list-client';
@@ -66,6 +81,7 @@ function setupDefaults(overrides: {
   sort?: string;
   dir?: string;
   pendingCompletions?: Set<string>;
+  pendingRemovals?: Set<string>;
 } = {}) {
   const {
     search = null,
@@ -74,6 +90,7 @@ function setupDefaults(overrides: {
     sort = 'name',
     dir = 'asc',
     pendingCompletions = new Set<string>(),
+    pendingRemovals = new Set<string>(),
   } = overrides;
 
   mockUseQueryState.mockReturnValue([search, vi.fn()]);
@@ -84,14 +101,15 @@ function setupDefaults(overrides: {
     return [{ sort, dir }, vi.fn()];
   });
   mockUseProgressStore.mockImplementation(
-    (selector: (s: { pendingCompletions: Set<string> }) => unknown) =>
-      selector({ pendingCompletions }),
+    (selector: (s: { pendingCompletions: Set<string>; pendingRemovals: Set<string> }) => unknown) =>
+      selector({ pendingCompletions, pendingRemovals }),
   );
 }
 
 const defaultProps = {
   peaks: mockPeaks,
   serverCompletedIds: [] as string[],
+  userId: null as string | null,
 };
 
 describe('PeakListClient', () => {
@@ -99,6 +117,9 @@ describe('PeakListClient', () => {
     mockUseQueryState.mockReset();
     mockUseQueryStates.mockReset();
     mockUseProgressStore.mockReset();
+    mockToggle.mockReset();
+    mockUseToggleProgress.mockReset();
+    mockUseToggleProgress.mockReturnValue({ toggle: mockToggle });
     setupDefaults();
   });
 
@@ -139,15 +160,18 @@ describe('PeakListClient', () => {
   });
 
   it('merges pendingCompletions with serverCompletedIds for completion filter', () => {
-    setupDefaults({
-      completion: 'complete',
-      pendingCompletions: new Set(['p2']),
-    });
+    setupDefaults({ completion: 'complete', pendingCompletions: new Set(['p2']) });
     render(<PeakListClient {...defaultProps} serverCompletedIds={['p1']} />);
-    // p1 (server) + p2 (pending) should both show as complete
     expect(screen.getByText('Skiddaw')).toBeInTheDocument();
     expect(screen.getByText('Great Gable')).toBeInTheDocument();
     expect(screen.queryByText('Helvellyn')).not.toBeInTheDocument();
+  });
+
+  it('excludes pendingRemovals from allCompletedIds for completion filter', () => {
+    setupDefaults({ completion: 'incomplete', pendingRemovals: new Set(['p1']) });
+    render(<PeakListClient {...defaultProps} serverCompletedIds={['p1']} />);
+    // p1 was server-completed but is in pendingRemovals — should show as incomplete
+    expect(screen.getByText('Skiddaw')).toBeInTheDocument();
   });
 
   it('filters to incomplete peaks only', () => {
@@ -164,24 +188,10 @@ describe('PeakListClient', () => {
     expect(screen.getByText(/No peaks match your current filters/)).toBeInTheDocument();
   });
 
-  it('shows a Done badge for server-completed peaks', () => {
-    render(<PeakListClient {...defaultProps} serverCompletedIds={['p2']} />);
-    const badges = screen.getAllByText('Done');
-    expect(badges).toHaveLength(1);
-  });
-
-  it('shows a Done badge for peaks completed via pendingCompletions', () => {
-    setupDefaults({ pendingCompletions: new Set(['p3']) });
-    render(<PeakListClient {...defaultProps} />);
-    const badges = screen.getAllByText('Done');
-    expect(badges).toHaveLength(1);
-  });
-
   it('sorts peaks by height descending when dir=desc and sort=heightMetres', () => {
     setupDefaults({ sort: 'heightMetres', dir: 'desc' });
     render(<PeakListClient {...defaultProps} />);
     const items = screen.getAllByRole('listitem');
-    // Helvellyn (950m) > Skiddaw (931m) > Great Gable (899m)
     expect(items[0]).toHaveTextContent('Helvellyn');
     expect(items[1]).toHaveTextContent('Skiddaw');
     expect(items[2]).toHaveTextContent('Great Gable');
@@ -194,5 +204,42 @@ describe('PeakListClient', () => {
     expect(screen.getByRole('combobox', { name: /filter by region/i })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: /sort order/i })).toBeInTheDocument();
     expect(screen.queryByRole('combobox', { name: /sort direction/i })).not.toBeInTheDocument();
+  });
+
+  describe('progress toggle', () => {
+    it('renders a toggle button per peak when userId is provided', () => {
+      render(<PeakListClient {...defaultProps} userId="user-123" />);
+      const buttons = screen.getAllByRole('button', { name: /mark .* as complete/i });
+      expect(buttons).toHaveLength(3);
+    });
+
+    it('does not render toggle buttons when userId is null', () => {
+      render(<PeakListClient {...defaultProps} userId={null} />);
+      expect(screen.queryByRole('button', { name: /mark .* as/i })).not.toBeInTheDocument();
+    });
+
+    it('toggle button is aria-pressed=false for incomplete peaks', () => {
+      render(<PeakListClient {...defaultProps} userId="user-123" />);
+      const btn = screen.getByRole('button', { name: /mark Skiddaw as complete/i });
+      expect(btn).toHaveAttribute('aria-pressed', 'false');
+    });
+
+    it('toggle button is aria-pressed=true for completed peaks', () => {
+      render(<PeakListClient {...defaultProps} userId="user-123" serverCompletedIds={['p1']} />);
+      const btn = screen.getByRole('button', { name: /mark Skiddaw as incomplete/i });
+      expect(btn).toHaveAttribute('aria-pressed', 'true');
+    });
+
+    it('calls toggle with peakId and completed state on click', async () => {
+      const user = userEvent.setup();
+      render(<PeakListClient {...defaultProps} userId="user-123" />);
+      await user.click(screen.getByRole('button', { name: /mark Skiddaw as complete/i }));
+      expect(mockToggle).toHaveBeenCalledWith('p1', false);
+    });
+
+    it('passes userId to useToggleProgress', () => {
+      render(<PeakListClient {...defaultProps} userId="user-123" />);
+      expect(mockUseToggleProgress).toHaveBeenCalledWith('user-123');
+    });
   });
 });

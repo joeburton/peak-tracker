@@ -1,8 +1,10 @@
 'use client';
 
 import { useMemo } from 'react';
+import { Circle, CheckCircle2 } from 'lucide-react';
 import { useQueryState, useQueryStates } from 'nuqs';
 import { useProgressStore } from '@/stores/progress';
+import { useToggleProgress } from '@/features/peaks/hooks/use-toggle-progress';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -11,7 +13,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import type { Peak } from '@/lib/types/domain';
 import {
   SEARCH_PARAM,
@@ -32,6 +33,7 @@ import { COMBINED_SORT_OPTIONS } from '@/features/peaks/utils/sort-options';
 interface Props {
   peaks: Peak[];
   serverCompletedIds: string[];
+  userId: string | null;
 }
 
 const COMPLETION_LABELS: Record<CompletionFilter, string> = {
@@ -40,7 +42,7 @@ const COMPLETION_LABELS: Record<CompletionFilter, string> = {
   incomplete: 'Incomplete',
 };
 
-export function PeakListClient({ peaks, serverCompletedIds }: Props) {
+export function PeakListClient({ peaks, serverCompletedIds, userId }: Props) {
   const [search, setSearch] = useQueryState(
     SEARCH_PARAM,
     searchParser.withOptions({ throttleMs: 300 }),
@@ -56,12 +58,15 @@ export function PeakListClient({ peaks, serverCompletedIds }: Props) {
     [DIR_PARAM]: dirParser,
   });
 
-  const pendingCompletions = useProgressStore((state) => state.pendingCompletions);
+  const pendingCompletions = useProgressStore((s) => s.pendingCompletions);
+  const pendingRemovals = useProgressStore((s) => s.pendingRemovals);
+  const { toggle } = useToggleProgress(userId);
 
-  const allCompletedIds = useMemo(
-    () => new Set([...serverCompletedIds, ...Array.from(pendingCompletions)]),
-    [serverCompletedIds, pendingCompletions],
-  );
+  const allCompletedIds = useMemo(() => {
+    const all = new Set([...serverCompletedIds, ...Array.from(pendingCompletions)]);
+    pendingRemovals.forEach((id) => all.delete(id));
+    return all;
+  }, [serverCompletedIds, pendingCompletions, pendingRemovals]);
 
   const regions = useMemo(
     () =>
@@ -188,21 +193,45 @@ export function PeakListClient({ peaks, serverCompletedIds }: Props) {
         <ul className="divide-y" role="list" aria-label="Peak list">
           {sorted.map((peak) => {
             const completed = allCompletedIds.has(peak.id);
-            return (
-              <li
-                key={peak.id}
-                className="flex items-center justify-between gap-4 py-3"
-              >
-                <div className="min-w-0">
-                  <p className="font-medium leading-snug truncate">{peak.name}</p>
-                  <p className="text-sm text-muted-foreground">{peak.region}</p>
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
+            const rowContent = (
+              <>
+                <span className="min-w-0">
+                  <span className="block font-medium leading-snug truncate">{peak.name}</span>
+                  <span className="block text-sm text-muted-foreground">{peak.region}</span>
+                </span>
+                <span className="flex items-center gap-3 shrink-0">
                   <span className="text-sm text-muted-foreground tabular-nums text-right">
                     {peak.heightMetres}m&nbsp;/&nbsp;{peak.heightFeet}ft
                   </span>
-                  {completed && <Badge variant="default">Done</Badge>}
-                </div>
+                  {completed ? (
+                    <CheckCircle2 className="size-5 text-primary" aria-hidden="true" />
+                  ) : (
+                    <Circle className="size-5 text-muted-foreground" aria-hidden="true" />
+                  )}
+                </span>
+              </>
+            );
+            return (
+              <li key={peak.id}>
+                {userId ? (
+                  <button
+                    type="button"
+                    onClick={() => toggle(peak.id, completed)}
+                    aria-pressed={completed}
+                    aria-label={
+                      completed
+                        ? `Mark ${peak.name} as incomplete`
+                        : `Mark ${peak.name} as complete`
+                    }
+                    className="group flex w-full items-center justify-between gap-4 py-3 -mx-1 rounded px-1 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    {rowContent}
+                  </button>
+                ) : (
+                  <div className="flex items-center justify-between gap-4 py-3">
+                    {rowContent}
+                  </div>
+                )}
               </li>
             );
           })}
