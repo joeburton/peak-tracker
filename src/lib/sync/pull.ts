@@ -1,6 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query'
 import type { ILocalProgressRepository } from '@/db/repositories/local-progress-repository'
 import type { UserProgress } from '@/lib/types/domain'
+import { UserProgressSchema } from '@/lib/validation/schemas'
 import { queryKeys } from '@/lib/queryKeys'
 import type { SyncActions } from './push'
 
@@ -38,8 +39,22 @@ export async function pullProgress(
     return
   }
 
-  const serverProgress = (await response.json()) as UserProgress
+  let serverProgress: UserProgress
+  try {
+    serverProgress = UserProgressSchema.parse(await response.json())
+  } catch {
+    syncActions.setSyncError('Pull failed: invalid response from server')
+    return
+  }
+
   const local = await localRepo.get(userId)
+
+  // Do not overwrite dirty local changes — push must complete before pull can
+  // accept server state, otherwise unsynced local edits are silently discarded.
+  if (local?.dirty) {
+    syncActions.setSyncing(false)
+    return
+  }
 
   const serverMs = new Date(serverProgress.updatedAt).getTime()
   const localMs = local ? new Date(local.updatedAt).getTime() : -Infinity

@@ -182,4 +182,33 @@ describe('pullProgress', () => {
 
     expect(mockUpsert).not.toHaveBeenCalled()
   })
+
+  it('does not overwrite a dirty local record — push must complete first', async () => {
+    const dirtyLocal: LocalProgress = { ...LOCAL_PROGRESS, dirty: true }
+    const mockUpsert = vi.fn()
+    const localRepo = makeLocalRepo({ get: vi.fn().mockResolvedValue(dirtyLocal), upsert: mockUpsert })
+    const syncActions = makeSyncActions()
+
+    // Server is newer, but local is dirty — should bail without writing to Dexie
+    await pullProgress('user_123', localRepo, syncActions, makeQueryClient())
+
+    expect(mockUpsert).not.toHaveBeenCalled()
+    expect(syncActions.setSyncComplete).not.toHaveBeenCalled()
+    expect(syncActions.setSyncing).toHaveBeenCalledWith(false)
+  })
+
+  it('calls setSyncError when the server response fails Zod validation', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(okResponse({ userId: 'user_123', completedPeakIds: 'not-an-array' })),
+    )
+    const mockUpsert = vi.fn()
+    const localRepo = makeLocalRepo({ upsert: mockUpsert })
+    const syncActions = makeSyncActions()
+
+    await pullProgress('user_123', localRepo, syncActions, makeQueryClient())
+
+    expect(mockUpsert).not.toHaveBeenCalled()
+    expect(syncActions.setSyncError).toHaveBeenCalledWith('Pull failed: invalid response from server')
+  })
 })
