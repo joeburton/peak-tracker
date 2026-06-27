@@ -14,6 +14,7 @@
 - Conflict resolution is **Last Write Wins** based on `updatedAt` timestamp and `version` number
 - All routes return `application/json`
 - All routes require a valid Clerk session — unauthenticated requests receive `401`
+- `proxy.ts` enforces `401` on all unauthenticated `/api/*` requests as a first line of defence; route handlers call `requireAuth()` (`src/lib/auth/index.ts`) as a second line
 
 ---
 
@@ -28,6 +29,10 @@ Called by the sync engine during the **pull** phase to retrieve the latest serve
 #### Auth
 
 Required. `userId` is extracted from the Clerk session via `auth()`.
+
+#### Implementation
+
+Uses `ProgressRepository.findByUserId(userId)` (`src/lib/db/repositories/progress-repository.ts`).
 
 #### Request
 
@@ -91,7 +96,11 @@ Required. `userId` is extracted from the Clerk session via `auth()` and injected
 | `updatedAt` | ISO 8601 string | Yes | Client timestamp of the local change |
 | `version` | integer ≥ 1 | Yes | Monotonically increasing — client increments on each write |
 
-Validated against `UserProgressSchema` (Zod). Invalid bodies receive `422`.
+Validated against `UserProgressSchema.omit({ userId: true })` — `userId` is sourced from the Clerk session, not the body. Invalid bodies receive `422`.
+
+#### Implementation
+
+Uses `ProgressRepository.restore(progress)` — **not** `upsert()`. `restore()` writes the client-supplied `version` as-is. `upsert()` uses `$inc: { version: 1 }` (server-side increment) which would double-increment because the client already increments version before each local write (see `useToggleProgress`).
 
 #### Conflict resolution (server-side)
 
