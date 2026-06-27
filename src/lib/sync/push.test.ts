@@ -29,7 +29,14 @@ function makeSyncActions() {
   }
 }
 
-function okResponse(body: unknown = {}): Response {
+const SERVER_RESPONSE = {
+  userId: 'user_123',
+  completedPeakIds: DIRTY_PROGRESS.completedPeakIds,
+  updatedAt: DIRTY_PROGRESS.updatedAt,
+  version: DIRTY_PROGRESS.version,
+}
+
+function okResponse(body: unknown = SERVER_RESPONSE): Response {
   return new Response(JSON.stringify(body), { status: 200 })
 }
 
@@ -95,16 +102,29 @@ describe('pushProgress', () => {
     })
   })
 
-  it('marks the record clean and calls setSyncComplete on success', async () => {
+  it('marks the record clean using the server updatedAt and calls setSyncComplete', async () => {
     const mockMarkClean = vi.fn()
     const localRepo = makeLocalRepo({ markClean: mockMarkClean })
     const syncActions = makeSyncActions()
 
     await pushProgress('user_123', localRepo, syncActions)
 
+    expect(mockMarkClean).toHaveBeenCalledWith('user_123', SERVER_RESPONSE.updatedAt)
+    expect(syncActions.setSyncComplete).toHaveBeenCalledWith(SERVER_RESPONSE.updatedAt)
+    expect(syncActions.setSyncError).not.toHaveBeenCalled()
+  })
+
+  it('falls back to a client timestamp when server response body is invalid', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(okResponse({ invalid: true })))
+    const mockMarkClean = vi.fn()
+    const localRepo = makeLocalRepo({ markClean: mockMarkClean })
+    const syncActions = makeSyncActions()
+
+    await pushProgress('user_123', localRepo, syncActions)
+
+    // markClean is still called — sync completes with a client-generated fallback timestamp
     expect(mockMarkClean).toHaveBeenCalledWith('user_123', expect.any(String))
     expect(syncActions.setSyncComplete).toHaveBeenCalledWith(expect.any(String))
-    expect(syncActions.setSyncError).not.toHaveBeenCalled()
   })
 
   it('does not mark clean and calls setSyncError on non-ok response', async () => {

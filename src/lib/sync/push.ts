@@ -1,4 +1,5 @@
 import type { ILocalProgressRepository } from '@/db/repositories/local-progress-repository'
+import { UserProgressSchema } from '@/lib/validation/schemas'
 
 export interface SyncActions {
   setSyncing: (value: boolean) => void
@@ -52,7 +53,10 @@ export async function pushProgress(
     return
   }
 
-  const now = new Date().toISOString()
-  await localRepo.markClean(userId, now)
-  syncActions.setSyncComplete(now)
+  // Use the server's authoritative updatedAt so lastSyncedAt reflects what
+  // MongoDB actually stored, not a client-generated timestamp that may drift.
+  const parsed = UserProgressSchema.safeParse(await response.json())
+  const syncedAt = parsed.success ? parsed.data.updatedAt : new Date().toISOString()
+  await localRepo.markClean(userId, syncedAt)
+  syncActions.setSyncComplete(syncedAt)
 }
