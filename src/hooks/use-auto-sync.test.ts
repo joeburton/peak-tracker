@@ -56,7 +56,7 @@ describe('useAutoSync', () => {
     )
   })
 
-  it('does not trigger sync when transitioning online→offline→online is not detected', () => {
+  it('triggers sync exactly once when transitioning online→offline→online', () => {
     useConnectivityStore.setState({ isOnline: true })
     renderHook(() => useAutoSync('user_123'))
 
