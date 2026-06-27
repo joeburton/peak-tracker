@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/auth'
 import { getDb } from '@/lib/db/mongodb'
 import { createProgressRepository } from '@/lib/db/repositories/progress-repository'
 import { UserProgressSchema } from '@/lib/validation/schemas'
+import { isNewerThan } from '@/lib/sync/lww'
 
 export const dynamic = 'force-dynamic'
 
@@ -50,24 +51,15 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
   // Last Write Wins — compare against existing server record before writing.
   // 409 when server is newer: client must pull first and re-evaluate.
   const existing = await repo.findByUserId(userId)
-  if (existing) {
-    const incomingMs = new Date(parsed.data.updatedAt).getTime()
-    const existingMs = new Date(existing.updatedAt).getTime()
-
-    const serverIsNewer =
-      incomingMs < existingMs ||
-      (incomingMs === existingMs && parsed.data.version <= existing.version)
-
-    if (serverIsNewer) {
-      return NextResponse.json(
-        {
-          error: 'Conflict — server record is newer',
-          serverUpdatedAt: existing.updatedAt,
-          serverVersion: existing.version,
-        },
-        { status: 409 },
-      )
-    }
+  if (existing && !isNewerThan(parsed.data, existing)) {
+    return NextResponse.json(
+      {
+        error: 'Conflict — server record is newer',
+        serverUpdatedAt: existing.updatedAt,
+        serverVersion: existing.version,
+      },
+      { status: 409 },
+    )
   }
 
   // restore() trusts the client-supplied version — the client increments before

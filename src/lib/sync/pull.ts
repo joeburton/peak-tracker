@@ -3,6 +3,7 @@ import type { ILocalProgressRepository } from '@/db/repositories/local-progress-
 import type { UserProgress } from '@/lib/types/domain'
 import { UserProgressSchema } from '@/lib/validation/schemas'
 import { queryKeys } from '@/lib/queryKeys'
+import { isNewerThan } from './lww'
 import type { SyncActions } from './push'
 
 /**
@@ -56,14 +57,9 @@ export async function pullProgress(
     return
   }
 
-  const serverMs = new Date(serverProgress.updatedAt).getTime()
-  const localMs = local ? new Date(local.updatedAt).getTime() : -Infinity
+  const serverWins = !local || isNewerThan(serverProgress, local)
 
-  const serverIsNewer =
-    serverMs > localMs ||
-    (serverMs === localMs && serverProgress.version > (local?.version ?? -1))
-
-  if (serverIsNewer) {
+  if (serverWins) {
     await localRepo.upsert(userId, {
       completedPeakIds: serverProgress.completedPeakIds,
       updatedAt: serverProgress.updatedAt,
