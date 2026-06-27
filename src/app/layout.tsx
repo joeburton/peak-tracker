@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { QueryProvider } from '@/components/query-provider';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
+import { SyncProvider } from '@/components/sync-provider';
 import './globals.css';
 
 const geistSans = Geist({
@@ -44,6 +45,7 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <QueryProvider>
+              <SyncProvider />
               <NuqsAdapter>
                 <a
                   href="#main-content"
