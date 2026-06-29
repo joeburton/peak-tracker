@@ -1,18 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { useProgressStore } from '@/stores/progress'
+import { useConnectivityStore } from '@/stores/connectivity'
 
-const { mockGet, mockUpsert, mockMarkDirty, mockCreateRepo } = vi.hoisted(() => {
+const { mockGet, mockUpsert, mockMarkDirty, mockCreateRepo, mockRunSyncCycle } = vi.hoisted(() => {
   const mockGet = vi.fn()
   const mockUpsert = vi.fn()
   const mockMarkDirty = vi.fn()
   const mockCreateRepo = vi.fn(() => ({ get: mockGet, upsert: mockUpsert, markDirty: mockMarkDirty }))
-  return { mockGet, mockUpsert, mockMarkDirty, mockCreateRepo }
+  const mockRunSyncCycle = vi.fn().mockResolvedValue(undefined)
+  return { mockGet, mockUpsert, mockMarkDirty, mockCreateRepo, mockRunSyncCycle }
 })
 
 vi.mock('@/db/dexie', () => ({ db: {} }))
 vi.mock('@/db/repositories/local-progress-repository', () => ({
   createLocalProgressRepository: mockCreateRepo,
+}))
+vi.mock('@/lib/sync/cycle', () => ({ runSyncCycle: mockRunSyncCycle }))
+vi.mock('@tanstack/react-query', () => ({
+  useQueryClient: vi.fn().mockReturnValue({}),
 }))
 
 import { useToggleProgress } from './use-toggle-progress'
@@ -29,12 +35,15 @@ const existingRecord = {
 
 beforeEach(() => {
   useProgressStore.setState({ pendingCompletions: new Set(), pendingRemovals: new Set() })
+  useConnectivityStore.setState({ isOnline: true, connectionQuality: 'unknown' })
   mockGet.mockReset()
   mockUpsert.mockReset()
   mockMarkDirty.mockReset()
+  mockRunSyncCycle.mockReset()
   mockGet.mockResolvedValue(existingRecord)
   mockUpsert.mockResolvedValue(undefined)
   mockMarkDirty.mockResolvedValue(undefined)
+  mockRunSyncCycle.mockResolvedValue(undefined)
 })
 
 describe('useToggleProgress', () => {
@@ -117,5 +126,33 @@ describe('useToggleProgress', () => {
       completedPeakIds: ['peak-new'],
       version: 1,
     }))
+  })
+
+  describe('sync on toggle', () => {
+    it('triggers runSyncCycle after toggle when online', async () => {
+      useConnectivityStore.setState({ isOnline: true })
+      const { result } = renderHook(() => useToggleProgress(USER_ID))
+      await act(() => result.current.toggle('peak-new', false))
+      expect(mockRunSyncCycle).toHaveBeenCalledWith(
+        USER_ID,
+        expect.any(Object),
+        expect.objectContaining({ setSyncing: expect.any(Function) }),
+        expect.any(Object),
+      )
+    })
+
+    it('does not trigger runSyncCycle when offline', async () => {
+      useConnectivityStore.setState({ isOnline: false })
+      const { result } = renderHook(() => useToggleProgress(USER_ID))
+      await act(() => result.current.toggle('peak-new', false))
+      expect(mockRunSyncCycle).not.toHaveBeenCalled()
+    })
+
+    it('does not trigger runSyncCycle when userId is null', async () => {
+      useConnectivityStore.setState({ isOnline: true })
+      const { result } = renderHook(() => useToggleProgress(null))
+      await act(() => result.current.toggle('peak-new', false))
+      expect(mockRunSyncCycle).not.toHaveBeenCalled()
+    })
   })
 })
