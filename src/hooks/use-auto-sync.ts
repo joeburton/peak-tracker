@@ -9,9 +9,12 @@ import { createLocalProgressRepository } from '@/db/repositories/local-progress-
 import { runSyncCycle } from '@/lib/sync/cycle'
 
 /**
- * Triggers a sync cycle whenever the device transitions from offline to online.
- * No-ops on initial mount (even if already online) to avoid a sync on every
- * page load. Call this once in a root client component that has access to userId.
+ * Triggers a sync cycle in two situations:
+ * 1. On mount (or when userId first becomes available): if dirty records exist in
+ *    Dexie and the device is online, sync immediately. Handles page reloads where
+ *    a previous toggle never reached the server.
+ * 2. When the device transitions from offline to online: sync regardless of dirty
+ *    state to also pull the latest server changes.
  */
 export function useAutoSync(userId: string | null): void {
   const isOnline = useConnectivityStore((s) => s.isOnline)
@@ -20,7 +23,23 @@ export function useAutoSync(userId: string | null): void {
   const setSyncError = useSyncStore((s) => s.setSyncError)
   const queryClient = useQueryClient()
   const prevOnlineRef = useRef(isOnline)
+  const mountSyncedForRef = useRef<string | null>(null)
 
+  // Mount check: sync dirty records when auth first loads and the device is online
+  useEffect(() => {
+    if (!userId || !isOnline) return
+    if (mountSyncedForRef.current === userId) return
+    mountSyncedForRef.current = userId
+
+    const localRepo = createLocalProgressRepository(db)
+    void localRepo.get(userId).then((local) => {
+      if (local?.dirty) {
+        void runSyncCycle(userId, localRepo, { setSyncing, setSyncComplete, setSyncError }, queryClient)
+      }
+    })
+  }, [isOnline, userId, setSyncing, setSyncComplete, setSyncError, queryClient])
+
+  // Transition check: sync whenever the device comes back online
   useEffect(() => {
     const wasOffline = !prevOnlineRef.current
     prevOnlineRef.current = isOnline

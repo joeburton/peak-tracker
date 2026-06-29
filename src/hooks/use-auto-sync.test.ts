@@ -2,14 +2,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { useConnectivityStore } from '@/stores/connectivity'
 
-const { mockRunSyncCycle } = vi.hoisted(() => ({
+const { mockRunSyncCycle, mockGet } = vi.hoisted(() => ({
   mockRunSyncCycle: vi.fn().mockResolvedValue(undefined),
+  mockGet: vi.fn().mockResolvedValue(undefined),
 }))
 
 vi.mock('@/lib/sync/cycle', () => ({ runSyncCycle: mockRunSyncCycle }))
 vi.mock('@/db/dexie', () => ({ db: {} }))
 vi.mock('@/db/repositories/local-progress-repository', () => ({
-  createLocalProgressRepository: vi.fn().mockReturnValue({}),
+  createLocalProgressRepository: vi.fn().mockReturnValue({ get: mockGet }),
 }))
 vi.mock('@/stores/sync', () => ({
   useSyncStore: vi.fn((selector: (s: object) => unknown) =>
@@ -25,19 +26,40 @@ import { useAutoSync } from './use-auto-sync'
 describe('useAutoSync', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockGet.mockResolvedValue(undefined) // clean by default — no dirty records
     useConnectivityStore.setState({ isOnline: true, connectionQuality: 'unknown' })
   })
 
-  it('does not trigger sync on initial mount even when already online', () => {
+  it('does not trigger sync on mount when records are clean', async () => {
+    mockGet.mockResolvedValue({ dirty: false })
     useConnectivityStore.setState({ isOnline: true })
     renderHook(() => useAutoSync('user_123'))
+    await vi.waitFor(() => expect(mockGet).toHaveBeenCalled())
     expect(mockRunSyncCycle).not.toHaveBeenCalled()
   })
 
-  it('does not trigger sync on initial mount when offline', () => {
+  it('does not trigger sync on mount when offline', async () => {
     useConnectivityStore.setState({ isOnline: false })
     renderHook(() => useAutoSync('user_123'))
+    // get() should not be called at all — guard bails before the Dexie lookup
+    await new Promise((r) => setTimeout(r, 50))
     expect(mockRunSyncCycle).not.toHaveBeenCalled()
+  })
+
+  it('syncs on mount when online and dirty records exist', async () => {
+    mockGet.mockResolvedValue({ dirty: true })
+    useConnectivityStore.setState({ isOnline: true })
+    renderHook(() => useAutoSync('user_123'))
+    await vi.waitFor(() => expect(mockRunSyncCycle).toHaveBeenCalled())
+  })
+
+  it('does not trigger the mount sync twice for the same userId', async () => {
+    mockGet.mockResolvedValue({ dirty: true })
+    useConnectivityStore.setState({ isOnline: true })
+    const { rerender } = renderHook(() => useAutoSync('user_123'))
+    await vi.waitFor(() => expect(mockRunSyncCycle).toHaveBeenCalledOnce())
+    rerender()
+    expect(mockRunSyncCycle).toHaveBeenCalledOnce()
   })
 
   it('triggers sync when transitioning from offline to online', () => {
