@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { SyncStatus } from '@/components/sync-status';
 import { AuthNav } from './auth-nav';
 
 export function Header() {
@@ -31,7 +32,8 @@ export function Header() {
           </nav>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <SyncStatus />
           <ThemeToggle />
           <AuthNav />
         </div>
