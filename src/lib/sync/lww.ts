@@ -13,8 +13,8 @@
  */
 
 export interface LwwRecord {
-  updatedAt: string
-  version: number
+  updatedAt: string;
+  version: number;
 }
 
 /**
@@ -22,8 +22,8 @@ export interface LwwRecord {
  * Returns false when `a` is older than, or the same age as, `b`.
  */
 export function isNewerThan(a: LwwRecord, b: LwwRecord): boolean {
-  const aMs = new Date(a.updatedAt).getTime()
-  const bMs = new Date(b.updatedAt).getTime()
-  if (aMs !== bMs) return aMs > bMs
-  return a.version > b.version
+  const aMs = new Date(a.updatedAt).getTime();
+  const bMs = new Date(b.updatedAt).getTime();
+  if (aMs !== bMs) return aMs > bMs;
+  return a.version > b.version;
 }

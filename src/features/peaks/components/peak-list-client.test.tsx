@@ -74,15 +74,17 @@ const mockPeaks = [
   },
 ];
 
-function setupDefaults(overrides: {
-  search?: string | null;
-  completion?: string;
-  region?: string | null;
-  sort?: string;
-  dir?: string;
-  pendingCompletions?: Set<string>;
-  pendingRemovals?: Set<string>;
-} = {}) {
+function setupDefaults(
+  overrides: {
+    search?: string | null;
+    completion?: string;
+    region?: string | null;
+    sort?: string;
+    dir?: string;
+    pendingCompletions?: Set<string>;
+    pendingRemovals?: Set<string>;
+  } = {}
+) {
   const {
     search = null,
     completion = 'all',
@@ -102,7 +104,7 @@ function setupDefaults(overrides: {
   });
   mockUseProgressStore.mockImplementation(
     (selector: (s: { pendingCompletions: Set<string>; pendingRemovals: Set<string> }) => unknown) =>
-      selector({ pendingCompletions, pendingRemovals }),
+      selector({ pendingCompletions, pendingRemovals })
   );
 }
 

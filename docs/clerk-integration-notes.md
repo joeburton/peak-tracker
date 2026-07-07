@@ -13,12 +13,12 @@
 
 ## What Changed in Next.js 16
 
-| | Next.js ≤15 | Next.js 16 |
-|---|---|---|
-| File name | `src/middleware.ts` | `src/proxy.ts` |
-| Runtime | Edge | Node.js (only option) |
-| Export name | `middleware` (named) | `proxy` (named) or default |
-| Clerk SDK usage | identical | identical |
+|                 | Next.js ≤15          | Next.js 16                 |
+| --------------- | -------------------- | -------------------------- |
+| File name       | `src/middleware.ts`  | `src/proxy.ts`             |
+| Runtime         | Edge                 | Node.js (only option)      |
+| Export name     | `middleware` (named) | `proxy` (named) or default |
+| Clerk SDK usage | identical            | identical                  |
 
 `middleware.ts` is deprecated in Next.js 16 in favour of `proxy.ts`. The project already has `src/proxy.ts` as a placeholder.
 
@@ -45,31 +45,29 @@ npm install @clerk/nextjs
 The recommended pattern passes `signInUrl` explicitly in the `clerkMiddleware` config (fixing the root cause of issue #8302) **and** uses an explicit `NextResponse.redirect()` as a second layer of defence for the proxy runtime.
 
 ```ts
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
-import { NextResponse } from 'next/server'
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { NextResponse } from 'next/server';
 
-const isPublicRoute = createRouteMatcher([
-  '/',
-  '/peak-lists/(.*)',
-  '/sign-in(.*)',
-  '/sign-up(.*)',
-])
+const isPublicRoute = createRouteMatcher(['/', '/peak-lists/(.*)', '/sign-in(.*)', '/sign-up(.*)']);
 
-export default clerkMiddleware(async (auth, request) => {
-  if (!isPublicRoute(request)) {
-    const { userId } = await auth()
-    if (!userId) {
-      return NextResponse.redirect(new URL('/sign-in', request.url))
+export default clerkMiddleware(
+  async (auth, request) => {
+    if (!isPublicRoute(request)) {
+      const { userId } = await auth();
+      if (!userId) {
+        return NextResponse.redirect(new URL('/sign-in', request.url));
+      }
     }
-  }
-}, { signInUrl: '/sign-in' })
+  },
+  { signInUrl: '/sign-in' }
+);
 
 export const config = {
   matcher: [
     '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
     '/(api)(.*)',
   ],
-}
+};
 ```
 
 **Why two layers?**
@@ -84,19 +82,20 @@ export const config = {
 Add `ClerkProvider` inside `<body>`, wrapping the existing `ThemeProvider`. The font variables, `suppressHydrationWarning`, and `ThemeProvider` props must be preserved:
 
 ```tsx
-import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
-import { ClerkProvider } from '@clerk/nextjs'
-import { ThemeProvider } from '@/components/theme-provider'
-import './globals.css'
+import type { Metadata } from 'next';
+import { Geist, Geist_Mono } from 'next/font/google';
+import { ClerkProvider } from '@clerk/nextjs';
+import { ThemeProvider } from '@/components/theme-provider';
+import './globals.css';
 
-const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
-const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] })
+const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] });
+const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Peak Tracker UK',
-  description: 'Track your progress across UK hill and mountain lists — Wainwrights, Munros, and more.',
-}
+  description:
+    'Track your progress across UK hill and mountain lists — Wainwrights, Munros, and more.',
+};
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
@@ -118,7 +117,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         </ClerkProvider>
       </body>
     </html>
-  )
+  );
 }
 ```
 
@@ -152,14 +151,14 @@ The proxy.ts pattern above already applies both fixes. See the proxy.ts snippet 
 
 ## Public vs Protected Routes
 
-| Route | Auth required |
-|---|---|
-| `/` | No |
-| `/peak-lists/[slug]` | No (read-only; progress toggle requires auth) |
-| `/sign-in` | No |
-| `/sign-up` | No |
-| `/api/progress` | Yes |
-| `/api/*` (any future progress routes) | Yes |
+| Route                                 | Auth required                                 |
+| ------------------------------------- | --------------------------------------------- |
+| `/`                                   | No                                            |
+| `/peak-lists/[slug]`                  | No (read-only; progress toggle requires auth) |
+| `/sign-in`                            | No                                            |
+| `/sign-up`                            | No                                            |
+| `/api/progress`                       | Yes                                           |
+| `/api/*` (any future progress routes) | Yes                                           |
 
 The home page and peak list pages are intentionally public — users can browse without signing in. Only progress-related API routes require a Clerk session.
 
@@ -189,12 +188,12 @@ Use `auth()` from `@clerk/nextjs/server` (async in v7) to extract `userId`. This
 **Server Component:**
 
 ```tsx
-import { auth } from '@clerk/nextjs/server'
-import { redirect } from 'next/navigation'
+import { auth } from '@clerk/nextjs/server';
+import { redirect } from 'next/navigation';
 
 export default async function ProtectedPage() {
-  const { userId } = await auth()
-  if (!userId) redirect('/sign-in')
+  const { userId } = await auth();
+  if (!userId) redirect('/sign-in');
   // pass userId to repository layer — never source from props or params
 }
 ```
@@ -202,11 +201,11 @@ export default async function ProtectedPage() {
 **Route Handler:**
 
 ```ts
-import { auth } from '@clerk/nextjs/server'
+import { auth } from '@clerk/nextjs/server';
 
 export async function GET() {
-  const { userId } = await auth()
-  if (!userId) return new Response(null, { status: 401 })
+  const { userId } = await auth();
+  if (!userId) return new Response(null, { status: 401 });
   // pass userId to repository layer
 }
 ```

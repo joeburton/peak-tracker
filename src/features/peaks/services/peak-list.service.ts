@@ -22,7 +22,7 @@ export const getPeakLists: () => Promise<PeakList[]> = unstable_cache(
     return repo.findAll();
   },
   ['peak-lists'],
-  { revalidate: 3600, tags: ['peak-lists'] },
+  { revalidate: 3600, tags: ['peak-lists'] }
 );
 
 export const getPeakList: (slug: string) => Promise<PeakList | null> = unstable_cache(
@@ -32,5 +32,5 @@ export const getPeakList: (slug: string) => Promise<PeakList | null> = unstable_
     return repo.findBySlug(slug);
   },
   ['peak-list-by-slug'],
-  { revalidate: 3600, tags: ['peak-lists'] },
+  { revalidate: 3600, tags: ['peak-lists'] }
 );

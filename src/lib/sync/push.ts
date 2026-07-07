@@ -1,10 +1,10 @@
-import type { ILocalProgressRepository } from '@/db/repositories/local-progress-repository'
-import { UserProgressSchema } from '@/lib/validation/schemas'
+import type { ILocalProgressRepository } from '@/db/repositories/local-progress-repository';
+import { UserProgressSchema } from '@/lib/validation/schemas';
 
 export interface SyncActions {
-  setSyncing: (value: boolean) => void
-  setSyncComplete: (timestamp: string) => void
-  setSyncError: (error: string) => void
+  setSyncing: (value: boolean) => void;
+  setSyncComplete: (timestamp: string) => void;
+  setSyncError: (error: string) => void;
 }
 
 /**
@@ -18,14 +18,14 @@ export interface SyncActions {
 export async function pushProgress(
   userId: string,
   localRepo: ILocalProgressRepository,
-  syncActions: SyncActions,
+  syncActions: SyncActions
 ): Promise<void> {
-  const local = await localRepo.get(userId)
-  if (!local?.dirty) return
+  const local = await localRepo.get(userId);
+  if (!local?.dirty) return;
 
-  syncActions.setSyncing(true)
+  syncActions.setSyncing(true);
 
-  let response: Response
+  let response: Response;
   try {
     response = await fetch('/api/progress', {
       method: 'PUT',
@@ -35,28 +35,28 @@ export async function pushProgress(
         updatedAt: local.updatedAt,
         version: local.version,
       }),
-    })
+    });
   } catch (err) {
-    syncActions.setSyncError(err instanceof Error ? err.message : 'Network error')
-    return
+    syncActions.setSyncError(err instanceof Error ? err.message : 'Network error');
+    return;
   }
 
   if (!response.ok) {
-    let message = `Push failed with status ${response.status}`
+    let message = `Push failed with status ${response.status}`;
     try {
-      const body = (await response.json()) as Record<string, unknown>
-      if (typeof body.error === 'string') message = body.error
+      const body = (await response.json()) as Record<string, unknown>;
+      if (typeof body.error === 'string') message = body.error;
     } catch {
       // response body is not JSON — fall back to status message
     }
-    syncActions.setSyncError(message)
-    return
+    syncActions.setSyncError(message);
+    return;
   }
 
   // Use the server's authoritative updatedAt so lastSyncedAt reflects what
   // MongoDB actually stored, not a client-generated timestamp that may drift.
-  const parsed = UserProgressSchema.safeParse(await response.json())
-  const syncedAt = parsed.success ? parsed.data.updatedAt : new Date().toISOString()
-  await localRepo.markClean(userId, syncedAt)
-  syncActions.setSyncComplete(syncedAt)
+  const parsed = UserProgressSchema.safeParse(await response.json());
+  const syncedAt = parsed.success ? parsed.data.updatedAt : new Date().toISOString();
+  await localRepo.markClean(userId, syncedAt);
+  syncActions.setSyncComplete(syncedAt);
 }

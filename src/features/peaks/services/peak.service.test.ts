@@ -16,7 +16,19 @@ import { getPeaks } from './peak.service';
 
 const mockDb = {};
 const mockPeaks = [
-  { id: '1', peakListSlug: 'wainwrights', slug: 'skiddaw', name: 'Skiddaw', region: 'Northern Fells', heightMetres: 931, heightFeet: 3054, latitude: 54.65, longitude: -3.14, createdAt: '2024-01-01T00:00:00.000Z', updatedAt: '2024-01-01T00:00:00.000Z' },
+  {
+    id: '1',
+    peakListSlug: 'wainwrights',
+    slug: 'skiddaw',
+    name: 'Skiddaw',
+    region: 'Northern Fells',
+    heightMetres: 931,
+    heightFeet: 3054,
+    latitude: 54.65,
+    longitude: -3.14,
+    createdAt: '2024-01-01T00:00:00.000Z',
+    updatedAt: '2024-01-01T00:00:00.000Z',
+  },
 ];
 
 describe('getPeaks()', () => {

@@ -15,5 +15,5 @@ export const getPeaks: (peakListSlug: string) => Promise<Peak[]> = unstable_cach
     return repo.findByListSlug(peakListSlug);
   },
   ['peaks-by-list'],
-  { revalidate: 3600, tags: ['peaks'] },
+  { revalidate: 3600, tags: ['peaks'] }
 );

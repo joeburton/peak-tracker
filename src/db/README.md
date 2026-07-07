@@ -10,19 +10,19 @@ The database is named `peakTracker` (matching the MongoDB database name).
 
 ## Schema version history
 
-| Version | Change | Tables after |
-|---------|--------|--------------|
-| 1 | Initial schema — progress tracking | `progress` |
-| 2 | Add user preferences | `progress`, `userPreferences` |
-| 3 | Add sync metadata | `progress`, `userPreferences`, `syncMetadata` |
+| Version | Change                             | Tables after                                  |
+| ------- | ---------------------------------- | --------------------------------------------- |
+| 1       | Initial schema — progress tracking | `progress`                                    |
+| 2       | Add user preferences               | `progress`, `userPreferences`                 |
+| 3       | Add sync metadata                  | `progress`, `userPreferences`, `syncMetadata` |
 
 ### Table purposes
 
-| Table | Primary key | Purpose |
-|-------|-------------|---------|
-| `progress` | `userId` | Per-user peak completion records. Mirrors the MongoDB `progress` collection, plus client-only `dirty` and `lastSyncedAt` fields. |
-| `userPreferences` | `userId` | Syncable user preferences (e.g. units). Follows the user across devices via the sync engine. Device-local UI state (theme, viewMode, sidebar) lives in Zustand `persist`, not here. |
-| `syncMetadata` | `id` (`'singleton'`) | Device-level sync state. One record per device. Records the last time a full sync completed so the sync engine knows what to push or pull. |
+| Table             | Primary key          | Purpose                                                                                                                                                                             |
+| ----------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `progress`        | `userId`             | Per-user peak completion records. Mirrors the MongoDB `progress` collection, plus client-only `dirty` and `lastSyncedAt` fields.                                                    |
+| `userPreferences` | `userId`             | Syncable user preferences (e.g. units). Follows the user across devices via the sync engine. Device-local UI state (theme, viewMode, sidebar) lives in Zustand `persist`, not here. |
+| `syncMetadata`    | `id` (`'singleton'`) | Device-level sync state. One record per device. Records the last time a full sync completed so the sync engine knows what to push or pull.                                          |
 
 ---
 
@@ -49,11 +49,11 @@ The database is named `peakTracker` (matching the MongoDB database name).
 ```ts
 // src/db/schema.ts
 export interface LocalNote {
-  id: string       // primary key (UUID)
-  userId: string   // indexed
-  peakId: string
-  body: string
-  updatedAt: string
+  id: string; // primary key (UUID)
+  userId: string; // indexed
+  peakId: string;
+  body: string;
+  updatedAt: string;
 }
 
 // src/db/dexie.ts — inside PeakTrackerDb constructor
@@ -61,7 +61,7 @@ this.version(4)
   .stores({ notes: 'id, userId' })
   .upgrade(() => {
     // Additive migration — no existing records need to be transformed.
-  })
+  });
 ```
 
 ---

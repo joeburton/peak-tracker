@@ -45,7 +45,7 @@ const COMPLETION_LABELS: Record<CompletionFilter, string> = {
 export function PeakListClient({ peaks, serverCompletedIds, userId }: Props) {
   const [search, setSearch] = useQueryState(
     SEARCH_PARAM,
-    searchParser.withOptions({ throttleMs: 300 }),
+    searchParser.withOptions({ throttleMs: 300 })
   );
 
   const [{ completion, region }, setFilters] = useQueryStates({
@@ -69,9 +69,8 @@ export function PeakListClient({ peaks, serverCompletedIds, userId }: Props) {
   }, [serverCompletedIds, pendingCompletions, pendingRemovals]);
 
   const regions = useMemo(
-    () =>
-      [...new Set(peaks.map((p) => p.region))].sort((a, b) => a.localeCompare(b, 'en-GB')),
-    [peaks],
+    () => [...new Set(peaks.map((p) => p.region))].sort((a, b) => a.localeCompare(b, 'en-GB')),
+    [peaks]
   );
 
   const lowerSearch = search ? search.toLowerCase() : '';
@@ -149,9 +148,7 @@ export function PeakListClient({ peaks, serverCompletedIds, userId }: Props) {
 
           <Select
             value={region || '__all__'}
-            onValueChange={(v) =>
-              setFilters({ [REGION_PARAM]: v === '__all__' ? null : v })
-            }
+            onValueChange={(v) => setFilters({ [REGION_PARAM]: v === '__all__' ? null : v })}
           >
             <SelectTrigger className="w-full sm:w-[180px]" aria-label="Filter by region">
               <SelectValue />
@@ -228,9 +225,7 @@ export function PeakListClient({ peaks, serverCompletedIds, userId }: Props) {
                     {rowContent}
                   </button>
                 ) : (
-                  <div className="flex items-center justify-between gap-4 py-3">
-                    {rowContent}
-                  </div>
+                  <div className="flex items-center justify-between gap-4 py-3">{rowContent}</div>
                 )}
               </li>
             );

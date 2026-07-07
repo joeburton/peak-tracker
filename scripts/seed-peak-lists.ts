@@ -1,13 +1,13 @@
-import { fileURLToPath } from 'node:url'
-import { getDb, disconnect } from '../src/lib/db/mongodb'
-import { COLLECTIONS } from '../src/lib/db/collections'
-import { PeakListSchema } from '../src/lib/validation/schemas'
+import { fileURLToPath } from 'node:url';
+import { getDb, disconnect } from '../src/lib/db/mongodb';
+import { COLLECTIONS } from '../src/lib/db/collections';
+import { PeakListSchema } from '../src/lib/validation/schemas';
 
 interface SeedPeakList {
-  slug: string
-  name: string
-  description: string
-  peakCount: number
+  slug: string;
+  name: string;
+  description: string;
+  peakCount: number;
 }
 
 export const PEAK_LISTS: SeedPeakList[] = [
@@ -25,19 +25,19 @@ export const PEAK_LISTS: SeedPeakList[] = [
       'The 282 Scottish mountains over 3,000 feet (914.4m), as defined by the Scottish Mountaineering Club and first listed by Sir Hugh Munro in 1891.',
     peakCount: 282,
   },
-]
+];
 
 export async function main(): Promise<void> {
   // Validate all records before opening a connection — prevents partial writes
   for (const list of PEAK_LISTS) {
-    PeakListSchema.parse({ id: list.slug, ...list })
+    PeakListSchema.parse({ id: list.slug, ...list });
   }
 
-  const db = await getDb()
-  const col = db.collection(COLLECTIONS.peakLists)
-  const now = new Date()
+  const db = await getDb();
+  const col = db.collection(COLLECTIONS.peakLists);
+  const now = new Date();
 
-  console.log(`Seeding ${PEAK_LISTS.length} peak lists...`)
+  console.log(`Seeding ${PEAK_LISTS.length} peak lists...`);
 
   for (const list of PEAK_LISTS) {
     const result = await col.updateOne(
@@ -51,26 +51,26 @@ export async function main(): Promise<void> {
         },
         $setOnInsert: { createdAt: now },
       },
-      { upsert: true },
-    )
+      { upsert: true }
+    );
 
-    const action = result.upsertedCount > 0 ? 'inserted' : 'updated'
-    console.log(`  ${action}: ${list.name} (${list.peakCount} peaks)`)
+    const action = result.upsertedCount > 0 ? 'inserted' : 'updated';
+    console.log(`  ${action}: ${list.name} (${list.peakCount} peaks)`);
   }
 
-  console.log('Peak lists seeded successfully.')
+  console.log('Peak lists seeded successfully.');
 }
 
 // Only execute when run directly — not when imported in tests
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  let exitCode = 0
+  let exitCode = 0;
   main()
     .catch((err: unknown) => {
-      console.error('Failed to seed peak lists:', err)
-      exitCode = 1
+      console.error('Failed to seed peak lists:', err);
+      exitCode = 1;
     })
     .finally(async () => {
-      await disconnect().catch((e: unknown) => console.error('disconnect error:', e))
-      process.exit(exitCode)
-    })
+      await disconnect().catch((e: unknown) => console.error('disconnect error:', e));
+      process.exit(exitCode);
+    });
 }
