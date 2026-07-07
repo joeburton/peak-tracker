@@ -29,9 +29,9 @@ Not installed, and not viable for Next.js 16.
 
 The actively-maintained successor library for modern Next.js, and the library recommended by the [official Next.js PWA guide](https://nextjs.org/docs/app/guides/progressive-web-apps) for offline support.
 
-- First-class Next.js App Router support via `@serwist/next`
+- First-class Next.js App Router support via `@serwist/next` (v9.5.11, confirmed compatible with Next.js 16.2.x)
 - Service worker authored in TypeScript, compiled at build time
-- Also requires Webpack, but only for the production build
+- Requires Webpack for the production build and for local SW testing in development
 - **Verdict: adopt.**
 
 ---
@@ -44,9 +44,12 @@ The solution is a hybrid configuration:
 
 | Command | Bundler | Rationale |
 |---------|---------|-----------|
-| `next dev --turbopack` | Turbopack | Fast HMR in development |
-| `next build --webpack` | Webpack | Serwist service worker injection |
+| `next dev --turbopack` | Turbopack | Fast HMR for regular development (SW not active) |
+| `next dev --webpack` | Webpack | Required when testing service worker behaviour locally |
+| `next build --webpack` | Webpack | Serwist service worker injection for production |
 | `next start` | N/A | Serves built output unchanged |
+
+When developing features unrelated to the service worker, use `--turbopack` for speed. Switch to `--webpack` only when you need to test offline/SW behaviour locally. Production builds always use `--webpack`.
 
 Production builds are slower than Turbopack would be. This is an acceptable trade-off given the project size.
 
@@ -57,7 +60,7 @@ Production builds are slower than Turbopack would be. This is an acceptable trad
 ### Dependencies (`#75`)
 
 ```bash
-npm install @serwist/next serwist
+npm install @serwist/next@9.5.11 serwist@9.5.11
 ```
 
 ### Build scripts — `package.json` (`#75`)
