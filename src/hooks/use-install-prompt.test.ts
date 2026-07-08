@@ -53,6 +53,44 @@ describe('useInstallPrompt', () => {
     expect(result.current.canInstall).toBe(false);
   });
 
+  it('restores the prompt event when install() throws', async () => {
+    const { result } = renderHook(() => useInstallPrompt());
+    const event = makePromptEvent('accepted');
+    event.prompt = vi.fn().mockRejectedValue(new Error('AbortError'));
+
+    act(() => {
+      window.dispatchEvent(event);
+    });
+
+    await act(async () => {
+      await result.current.install();
+    });
+
+    expect(result.current.canInstall).toBe(true);
+  });
+
+  it('prevents concurrent install() calls', async () => {
+    const { result } = renderHook(() => useInstallPrompt());
+    let resolvePrompt!: () => void;
+    const event = Object.assign(new Event('beforeinstallprompt'), {
+      prompt: vi.fn().mockReturnValue(new Promise<void>((res) => { resolvePrompt = res; })),
+      userChoice: Promise.resolve({ outcome: 'accepted' as const }),
+    });
+
+    act(() => {
+      window.dispatchEvent(event);
+    });
+
+    await act(async () => {
+      const p1 = result.current.install();
+      const p2 = result.current.install();
+      resolvePrompt();
+      await Promise.all([p1, p2]);
+    });
+
+    expect(event.prompt).toHaveBeenCalledOnce();
+  });
+
   it('sets dismissed flag and persists to localStorage when dismiss() is called', () => {
     const { result } = renderHook(() => useInstallPrompt());
 

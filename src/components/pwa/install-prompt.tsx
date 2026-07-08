@@ -6,6 +6,8 @@ import { useInstallPrompt } from '@/hooks/use-install-prompt';
 
 import { Button } from '@/components/ui/button';
 
+const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME ?? 'Peak Tracker UK';
+
 export function InstallPrompt() {
   const { canInstall, install, dismiss } = useInstallPrompt();
 
@@ -14,13 +16,13 @@ export function InstallPrompt() {
   return (
     <div
       role="region"
-      aria-label="Install Peak Tracker app"
+      aria-label={`Install ${APP_NAME} app`}
       className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background p-4 shadow-lg sm:bottom-4 sm:left-4 sm:right-auto sm:max-w-sm sm:rounded-lg sm:border"
     >
       <div className="flex items-start gap-3">
         <Download className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
         <div className="flex-1 space-y-1">
-          <p className="text-sm font-medium leading-none">Install Peak Tracker</p>
+          <p className="text-sm font-medium leading-none">Install {APP_NAME}</p>
           <p className="text-sm text-muted-foreground">
             Add to your home screen for offline access.
           </p>

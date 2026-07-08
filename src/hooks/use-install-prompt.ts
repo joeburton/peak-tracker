@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -24,6 +24,7 @@ export function useInstallPrompt(): UseInstallPromptResult {
     if (!dismissedAt) return false;
     return Date.now() - parseInt(dismissedAt, 10) < DISMISS_DURATION_MS;
   });
+  const installing = useRef(false);
 
   const isEnabled = process.env.NEXT_PUBLIC_ENABLE_PWA !== 'false';
 
@@ -40,11 +41,17 @@ export function useInstallPrompt(): UseInstallPromptResult {
   }, [isEnabled, isDismissed]);
 
   const install = useCallback(async () => {
-    if (!promptEvent) return;
-    await promptEvent.prompt();
-    const { outcome } = await promptEvent.userChoice;
-    if (outcome === 'accepted' || outcome === 'dismissed') {
-      setPromptEvent(null);
+    if (!promptEvent || installing.current) return;
+    installing.current = true;
+    const event = promptEvent;
+    setPromptEvent(null);
+    try {
+      await event.prompt();
+      await event.userChoice;
+    } catch {
+      setPromptEvent(event);
+    } finally {
+      installing.current = false;
     }
   }, [promptEvent]);
 
