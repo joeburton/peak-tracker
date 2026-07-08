@@ -23,6 +23,15 @@ export const metadata: Metadata = {
   title: 'Peak Tracker UK',
   description:
     'Track your progress across UK hill and mountain lists — Wainwrights, Munros, and more.',
+  themeColor: '#18181b',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Peak Tracker',
+  },
+  icons: {
+    apple: '/icon-192x192.png',
+  },
 };
 
 export default function RootLayout({
