@@ -7,6 +7,7 @@ import { QueryProvider } from '@/components/query-provider';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { SyncProvider } from '@/components/sync-provider';
+import { InstallPrompt } from '@/components/pwa/install-prompt';
 import './globals.css';
 
 const geistSans = Geist({
@@ -67,6 +68,7 @@ export default function RootLayout({
                   {children}
                 </main>
                 <Footer />
+                <InstallPrompt />
               </NuqsAdapter>
             </QueryProvider>
           </ThemeProvider>
