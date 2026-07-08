@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from 'zod';
 
 export const PeakListSchema = z.object({
   id: z.string().min(1),
@@ -6,7 +6,7 @@ export const PeakListSchema = z.object({
   name: z.string().min(1),
   description: z.string().min(1).optional(),
   peakCount: z.number().int().positive(),
-})
+});
 
 export const PeakSchema = z.object({
   id: z.string().min(1),
@@ -20,7 +20,7 @@ export const PeakSchema = z.object({
   longitude: z.number().min(-180).max(180),
   createdAt: z.string().datetime({ offset: true }),
   updatedAt: z.string().datetime({ offset: true }),
-})
+});
 
 // dirty is excluded — it is a client-only Dexie concern, never persisted to MongoDB
 export const UserProgressSchema = z.object({
@@ -28,33 +28,39 @@ export const UserProgressSchema = z.object({
   completedPeakIds: z.array(z.string().min(1)),
   updatedAt: z.string().datetime({ offset: true }),
   version: z.number().int().nonnegative(),
-})
+});
 
-export type PeakList = z.infer<typeof PeakListSchema>
-export type Peak = z.infer<typeof PeakSchema>
-export type UserProgress = z.infer<typeof UserProgressSchema>
+export type PeakList = z.infer<typeof PeakListSchema>;
+export type Peak = z.infer<typeof PeakSchema>;
+export type UserProgress = z.infer<typeof UserProgressSchema>;
 
 export interface RegionalStatistics {
-  region: string
-  total: number
-  completed: number
-  remaining: number
-  percentageComplete: number
+  region: string;
+  total: number;
+  completed: number;
+  remaining: number;
+  percentageComplete: number;
 }
 
 export interface PeakListStatistics {
-  total: number
-  completed: number
-  remaining: number
-  percentageComplete: number
-  byRegion: RegionalStatistics[]
+  total: number;
+  completed: number;
+  remaining: number;
+  percentageComplete: number;
+  byRegion: RegionalStatistics[];
 }
 
-export const CompletionFilterSchema = z.enum(['all', 'complete', 'incomplete'])
-export type CompletionFilter = z.infer<typeof CompletionFilterSchema>
+export const CompletionFilterSchema = z.enum(['all', 'complete', 'incomplete']);
+export type CompletionFilter = z.infer<typeof CompletionFilterSchema>;
 
-export const SortFieldSchema = z.enum(['name', 'heightMetres', 'heightFeet', 'region', 'completion'])
-export type SortField = z.infer<typeof SortFieldSchema>
+export const SortFieldSchema = z.enum([
+  'name',
+  'heightMetres',
+  'heightFeet',
+  'region',
+  'completion',
+]);
+export type SortField = z.infer<typeof SortFieldSchema>;
 
-export const SortDirectionSchema = z.enum(['asc', 'desc'])
-export type SortDirection = z.infer<typeof SortDirectionSchema>
+export const SortDirectionSchema = z.enum(['asc', 'desc']);
+export type SortDirection = z.infer<typeof SortDirectionSchema>;

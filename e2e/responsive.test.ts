@@ -17,9 +17,7 @@ const goto = async (page: Page, url: string) => {
 };
 
 const checkOverflow = (page: Page) =>
-  page.evaluate(
-    () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
-  );
+  page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
 
 for (const vp of VIEWPORTS) {
   test.describe(`${vp.label}`, () => {

@@ -30,7 +30,10 @@ describe('getPeakLists()', () => {
     mockCreatePeakListRepository.mockReset();
 
     mockGetDb.mockResolvedValue(mockDb);
-    mockCreatePeakListRepository.mockReturnValue({ findAll: mockFindAll, findBySlug: mockFindBySlug });
+    mockCreatePeakListRepository.mockReturnValue({
+      findAll: mockFindAll,
+      findBySlug: mockFindBySlug,
+    });
     mockFindAll.mockResolvedValue(mockPeakLists);
     mockFindBySlug.mockResolvedValue(mockPeakLists[0]);
   });
@@ -73,7 +76,10 @@ describe('getPeakList()', () => {
     mockCreatePeakListRepository.mockReset();
 
     mockGetDb.mockResolvedValue(mockDb);
-    mockCreatePeakListRepository.mockReturnValue({ findAll: mockFindAll, findBySlug: mockFindBySlug });
+    mockCreatePeakListRepository.mockReturnValue({
+      findAll: mockFindAll,
+      findBySlug: mockFindBySlug,
+    });
     mockFindBySlug.mockResolvedValue(mockPeakLists[0]);
   });
 

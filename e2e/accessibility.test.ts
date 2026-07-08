@@ -16,7 +16,6 @@ test.describe('WCAG 2.1 AA — home page', () => {
   });
 });
 
-
 test.describe('WCAG 2.1 AA — offline page', () => {
   test('zero axe violations', async ({ page }) => {
     await page.goto('/offline');

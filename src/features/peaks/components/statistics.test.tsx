@@ -35,7 +35,7 @@ describe('Statistics', () => {
   it('accepts a custom aria label', () => {
     render(<Statistics statistics={mockStatistics} label="Wainwrights progress statistics" />);
     expect(
-      screen.getByRole('region', { name: 'Wainwrights progress statistics' }),
+      screen.getByRole('region', { name: 'Wainwrights progress statistics' })
     ).toBeInTheDocument();
   });
 

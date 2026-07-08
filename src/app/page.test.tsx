@@ -10,8 +10,18 @@ vi.mock('@/features/peaks/services/peak-list.service', () => ({
 }));
 
 vi.mock('next/link', () => ({
-  default: ({ href, children, ...props }: { href: string; children: React.ReactNode; [key: string]: unknown }) => (
-    <a href={href} {...props}>{children}</a>
+  default: ({
+    href,
+    children,
+    ...props
+  }: {
+    href: string;
+    children: React.ReactNode;
+    [key: string]: unknown;
+  }) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
   ),
 }));
 
@@ -54,11 +64,11 @@ describe('Home page', () => {
     render(await Home());
     expect(screen.getByRole('link', { name: /wainwrights/i })).toHaveAttribute(
       'href',
-      '/peak-lists/wainwrights',
+      '/peak-lists/wainwrights'
     );
     expect(screen.getByRole('link', { name: /munros/i })).toHaveAttribute(
       'href',
-      '/peak-lists/munros',
+      '/peak-lists/munros'
     );
   });
 

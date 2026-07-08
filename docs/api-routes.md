@@ -62,11 +62,11 @@ The client treats `404` as an empty starting state.
 
 #### Error responses
 
-| Status | Condition |
-|--------|-----------|
-| `401`  | No valid Clerk session |
+| Status | Condition                               |
+| ------ | --------------------------------------- |
+| `401`  | No valid Clerk session                  |
 | `404`  | No progress record exists for this user |
-| `500`  | Unexpected server error |
+| `500`  | Unexpected server error                 |
 
 ---
 
@@ -90,11 +90,11 @@ Required. `userId` is extracted from the Clerk session via `auth()` and injected
 }
 ```
 
-| Field | Type | Required | Notes |
-|-------|------|----------|-------|
-| `completedPeakIds` | `string[]` | Yes | May be empty array |
-| `updatedAt` | ISO 8601 string | Yes | Client timestamp of the local change |
-| `version` | integer ≥ 1 | Yes | Monotonically increasing — client increments on each write |
+| Field              | Type            | Required | Notes                                                      |
+| ------------------ | --------------- | -------- | ---------------------------------------------------------- |
+| `completedPeakIds` | `string[]`      | Yes      | May be empty array                                         |
+| `updatedAt`        | ISO 8601 string | Yes      | Client timestamp of the local change                       |
+| `version`          | integer ≥ 1     | Yes      | Monotonically increasing — client increments on each write |
 
 Validated against `UserProgressSchema.omit({ userId: true })` — `userId` is sourced from the Clerk session, not the body. Invalid bodies receive `422`.
 
@@ -138,12 +138,12 @@ The server record is newer than the client record. The client must pull the late
 
 #### Error responses
 
-| Status | Condition |
-|--------|-----------|
-| `401`  | No valid Clerk session |
+| Status | Condition                                       |
+| ------ | ----------------------------------------------- |
+| `401`  | No valid Clerk session                          |
 | `409`  | Server record is newer — client must pull first |
-| `422`  | Request body fails Zod validation |
-| `500`  | Unexpected server error |
+| `422`  | Request body fails Zod validation               |
+| `500`  | Unexpected server error                         |
 
 ---
 

@@ -71,10 +71,10 @@ The application is a **generic peak-tracking platform**. It must support any UK 
 ### Frontend
 
 <<<<<<< HEAD
-- **Next.js 16** (App Router, Server Components by default)
-=======
+
+- # **Next.js 16** (App Router, Server Components by default)
 - **Next.js 16** (current stable: 16.2.x, App Router, Server Components by default)
->>>>>>> develop
+  > > > > > > > develop
 - **React 19**
 - **TypeScript** (strict mode)
 - **Tailwind CSS**
@@ -124,11 +124,12 @@ The application is a **generic peak-tracking platform**. It must support any UK 
 - **Service Worker**
 
 <<<<<<< HEAD
+
 > **Note on Next.js version:** The original spec referenced Next.js 16 which does not exist.
 > This spec uses Next.js 15 (current stable). Update this note if 16 ships before project start.
 > Check if version 16 is available and use it if so.
-=======
----
+
+## =======
 
 ## TESTING CONVENTIONS
 
@@ -180,7 +181,8 @@ These are breaking or significant changes that affect implementation decisions.
 | `proxy.ts`              | New network boundary entry point — Clerk and any request interception goes here |
 
 Before implementing the Auth milestone, review the Clerk documentation for Next.js 16 / `proxy.ts` compatibility and confirm the integration approach.
->>>>>>> develop
+
+> > > > > > > develop
 
 ---
 
@@ -604,13 +606,13 @@ URL params are the correct home for search, filter, and sort state because they 
 
 All URL param keys and parsers are defined in one file. Never use raw URL param name strings in components — always import from this file.
 
-| Export            | Param      | Type             | Default  |
-| ----------------- | ---------- | ---------------- | -------- |
-| `SEARCH_PARAM`    | `?search=` | `string`         | `''`     |
-| `COMPLETION_PARAM`| `?completion=` | `CompletionFilter` | `'all'` |
-| `REGION_PARAM`    | `?region=` | `string`         | `''`     |
-| `SORT_PARAM`      | `?sort=`   | `SortField`      | `'name'` |
-| `DIR_PARAM`       | `?dir=`    | `SortDirection`  | `'asc'`  |
+| Export             | Param          | Type               | Default  |
+| ------------------ | -------------- | ------------------ | -------- |
+| `SEARCH_PARAM`     | `?search=`     | `string`           | `''`     |
+| `COMPLETION_PARAM` | `?completion=` | `CompletionFilter` | `'all'`  |
+| `REGION_PARAM`     | `?region=`     | `string`           | `''`     |
+| `SORT_PARAM`       | `?sort=`       | `SortField`        | `'name'` |
+| `DIR_PARAM`        | `?dir=`        | `SortDirection`    | `'asc'`  |
 
 Enum parsers (`completionParser`, `sortParser`, `dirParser`) derive their valid values directly from the Zod schemas (`CompletionFilterSchema.options`, `SortFieldSchema.options`, `SortDirectionSchema.options`) — adding a new value to a schema automatically makes it a valid URL param value.
 
@@ -619,21 +621,27 @@ The sort UI collapses `SORT_PARAM` and `DIR_PARAM` into a single `<Select>` back
 **Usage in components:**
 
 ```ts
-import { useQueryState, useQueryStates } from 'nuqs'
+import { useQueryState, useQueryStates } from 'nuqs';
 import {
-  SEARCH_PARAM, searchParser,
-  COMPLETION_PARAM, completionParser,
-  REGION_PARAM, regionParser,
-} from '@/lib/nuqs/parsers'
+  SEARCH_PARAM,
+  searchParser,
+  COMPLETION_PARAM,
+  completionParser,
+  REGION_PARAM,
+  regionParser,
+} from '@/lib/nuqs/parsers';
 
 // Single param — with debounce for search
-const [search, setSearch] = useQueryState(SEARCH_PARAM, searchParser.withOptions({ throttleMs: 300 }))
+const [search, setSearch] = useQueryState(
+  SEARCH_PARAM,
+  searchParser.withOptions({ throttleMs: 300 })
+);
 
 // Multiple params at once
 const [{ completion, region }, setFilters] = useQueryStates({
   [COMPLETION_PARAM]: completionParser,
   [REGION_PARAM]: regionParser,
-})
+});
 ```
 
 **Rules:**

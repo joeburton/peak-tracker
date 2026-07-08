@@ -101,7 +101,9 @@ describe('PeakListPage', () => {
     mockGetProgress.mockResolvedValue([]);
     mockComputeStatistics.mockReturnValue(mockStatistics);
     mockAuth.mockResolvedValue({ userId: 'user-123' });
-    mockNotFound.mockImplementation(() => { throw new Error('NEXT_NOT_FOUND'); });
+    mockNotFound.mockImplementation(() => {
+      throw new Error('NEXT_NOT_FOUND');
+    });
     mockPeakListClient.mockReturnValue(<div data-testid="peak-list-client" />);
     mockStatisticsComponent.mockReturnValue(<div data-testid="statistics" />);
     mockRegionalBreakdownDialog.mockReturnValue(<div data-testid="regional-breakdown-dialog" />);
@@ -115,9 +117,9 @@ describe('PeakListPage', () => {
 
   it('calls notFound when getPeakList returns null', async () => {
     mockGetPeakList.mockResolvedValue(null);
-    await expect(
-      PeakListPage({ params: Promise.resolve({ slug: 'unknown' }) }),
-    ).rejects.toThrow('NEXT_NOT_FOUND');
+    await expect(PeakListPage({ params: Promise.resolve({ slug: 'unknown' }) })).rejects.toThrow(
+      'NEXT_NOT_FOUND'
+    );
     expect(mockNotFound).toHaveBeenCalledOnce();
   });
 
@@ -172,7 +174,13 @@ describe('PeakListPage', () => {
 
   it('renders RegionalBreakdownDialog with byRegion data when regions are present', async () => {
     const byRegion = [
-      { region: 'Northern Fells', total: 18, completed: 3, remaining: 15, percentageComplete: 16.7 },
+      {
+        region: 'Northern Fells',
+        total: 18,
+        completed: 3,
+        remaining: 15,
+        percentageComplete: 16.7,
+      },
     ];
     mockComputeStatistics.mockReturnValue({ ...mockStatistics, byRegion });
     const Page = await PeakListPage({ params: Promise.resolve({ slug: 'wainwrights' }) });

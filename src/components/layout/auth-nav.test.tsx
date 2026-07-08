@@ -7,8 +7,18 @@ vi.mock('@clerk/nextjs', () => ({
 }));
 
 vi.mock('next/link', () => ({
-  default: ({ href, children, ...props }: { href: string; children: React.ReactNode; [key: string]: unknown }) => (
-    <a href={href} {...props}>{children}</a>
+  default: ({
+    href,
+    children,
+    ...props
+  }: {
+    href: string;
+    children: React.ReactNode;
+    [key: string]: unknown;
+  }) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
   ),
 }));
 
@@ -23,7 +33,9 @@ describe('AuthNav', () => {
   });
 
   it('renders nothing while Clerk is loading', () => {
-    mockUseAuth.mockReturnValue({ isLoaded: false, isSignedIn: undefined } as ReturnType<typeof useAuth>);
+    mockUseAuth.mockReturnValue({ isLoaded: false, isSignedIn: undefined } as ReturnType<
+      typeof useAuth
+    >);
     const { container } = render(<AuthNav />);
     expect(container).toBeEmptyDOMElement();
   });
@@ -35,7 +47,9 @@ describe('AuthNav', () => {
   });
 
   it('renders sign-in link when unauthenticated', () => {
-    mockUseAuth.mockReturnValue({ isLoaded: true, isSignedIn: false } as ReturnType<typeof useAuth>);
+    mockUseAuth.mockReturnValue({ isLoaded: true, isSignedIn: false } as ReturnType<
+      typeof useAuth
+    >);
     render(<AuthNav />);
     const link = screen.getByRole('link', { name: /sign in/i });
     expect(link).toBeInTheDocument();

@@ -42,12 +42,12 @@ Next.js 16 defaults to Turbopack for both `next dev` and `next build`. Turbopack
 
 The solution is a hybrid configuration:
 
-| Command | Bundler | Rationale |
-|---------|---------|-----------|
-| `next dev --turbopack` | Turbopack | Fast HMR for regular development (SW not active) |
-| `next dev --webpack` | Webpack | Required when testing service worker behaviour locally |
-| `next build --webpack` | Webpack | Serwist service worker injection for production |
-| `next start` | N/A | Serves built output unchanged |
+| Command                | Bundler   | Rationale                                              |
+| ---------------------- | --------- | ------------------------------------------------------ |
+| `next dev --turbopack` | Turbopack | Fast HMR for regular development (SW not active)       |
+| `next dev --webpack`   | Webpack   | Required when testing service worker behaviour locally |
+| `next build --webpack` | Webpack   | Serwist service worker injection for production        |
+| `next start`           | N/A       | Serves built output unchanged                          |
 
 When developing features unrelated to the service worker, use `--turbopack` for speed. Switch to `--webpack` only when you need to test offline/SW behaviour locally. Production builds always use `--webpack`.
 
@@ -84,8 +84,8 @@ Wrap the config with Serwist's plugin (replaces `withPWA` from next-pwa).
 
 ## Risks
 
-| Risk | Likelihood | Mitigation |
-|------|------------|------------|
-| Webpack build slower than Turbopack | Certain | Acceptable — project size is manageable |
-| SW not active in dev mode | Expected | Test offline behaviour with `next build && next start` |
-| Serwist API changes on upgrade | Low | Pin version; review release notes before upgrading |
+| Risk                                | Likelihood | Mitigation                                             |
+| ----------------------------------- | ---------- | ------------------------------------------------------ |
+| Webpack build slower than Turbopack | Certain    | Acceptable — project size is manageable                |
+| SW not active in dev mode           | Expected   | Test offline behaviour with `next build && next start` |
+| Serwist API changes on upgrade      | Low        | Pin version; review release notes before upgrading     |
