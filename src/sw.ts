@@ -17,6 +17,15 @@ const serwist = new Serwist({
   navigationPreload: true,
   runtimeCaching: [
     {
+      // HTML pages: network-first so visited pages are cached for offline use.
+      // Must appear before defaultCache so it wins over any navigation handler there.
+      matcher: ({ request }) => request.mode === 'navigate',
+      handler: new NetworkFirst({
+        cacheName: 'pages-cache',
+        networkTimeoutSeconds: 10,
+      }),
+    },
+    {
       // API routes: network-first, fall back to cache if offline
       matcher: ({ url }) => url.pathname.startsWith('/api/'),
       handler: new NetworkFirst({

@@ -23,9 +23,15 @@ test.describe('SW-cached page loading', () => {
   test.skip(!swEnabled, 'SW is disabled in dev mode — requires production build (CI=true)');
 
   test.beforeEach(async ({ page }) => {
+    // First visit: SW installs and activates via clientsClaim, but the
+    // navigation response itself is not yet intercepted by the SW.
     await page.goto('/');
     await page.waitForLoadState('networkidle');
     await waitForSwActive(page);
+    // Second visit: SW is now the controller and intercepts this navigation,
+    // fetching and caching the HTML response in 'pages-cache'.
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
   });
 
   test('home page loads from SW cache when offline', async ({ page, context }) => {
@@ -37,6 +43,7 @@ test.describe('SW-cached page loading', () => {
   });
 
   test('peak list page loads from SW cache when offline', async ({ page, context }) => {
+    // SW is active from beforeEach — this navigation is intercepted and cached
     await page.goto('/peak-lists/wainwrights');
     await page.waitForLoadState('networkidle');
 
@@ -58,9 +65,12 @@ test.describe('SW offline navigation fallback', () => {
   test.skip(!swEnabled, 'SW is disabled in dev mode — requires production build (CI=true)');
 
   test.beforeEach(async ({ page }) => {
+    // Ensure SW is installed and active before the test navigates offline
     await page.goto('/');
     await page.waitForLoadState('networkidle');
     await waitForSwActive(page);
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
   });
 
   test('navigating to an uncached route offline shows the offline fallback page', async ({
@@ -69,7 +79,7 @@ test.describe('SW offline navigation fallback', () => {
   }) => {
     await context.setOffline(true);
 
-    // Navigate to a route the SW has not precached — SW serves /offline
+    // Navigate to a route the SW has not cached — SW fallback serves /offline
     await page.goto('/this-route-does-not-exist', { waitUntil: 'domcontentloaded' });
 
     await expect(page.getByRole('heading', { name: /you are offline/i })).toBeVisible();
