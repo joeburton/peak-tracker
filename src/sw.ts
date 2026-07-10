@@ -12,7 +12,7 @@ declare const self: ServiceWorkerGlobalScope;
 
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
-  skipWaiting: true,
+  skipWaiting: false,
   clientsClaim: true,
   navigationPreload: true,
   runtimeCaching: [
@@ -40,3 +40,10 @@ const serwist = new Serwist({
 });
 
 serwist.addEventListeners();
+
+// Allow the client to trigger activation of a waiting SW update
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
