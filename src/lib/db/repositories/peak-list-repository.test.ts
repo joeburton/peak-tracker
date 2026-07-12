@@ -105,6 +105,18 @@ describe('PeakListRepository.findAll', () => {
       { projection: { _id: 1, slug: 1, name: 1, description: 1, peakCount: 1 } }
     );
   });
+
+  it('skips documents that fail schema validation', async () => {
+    const invalidDoc = { _id: 'ccc', slug: 'bad', name: '', peakCount: 214 }; // empty name
+    mockToArray.mockResolvedValue([doc1, invalidDoc]);
+    const repo = createPeakListRepository(mockDb);
+
+    const result = await repo.findAll();
+
+    expect(result).toEqual([
+      { id: 'aaa', slug: 'wainwrights', name: 'Wainwrights', description: undefined, peakCount: 214 },
+    ]);
+  });
 });
 
 describe('PeakListRepository.findBySlug', () => {
@@ -153,5 +165,15 @@ describe('PeakListRepository.findBySlug', () => {
     const result = await repo.findBySlug('corbetts');
 
     expect(result!.id).toBe('objectid-hex');
+  });
+
+  it('throws when the matching document fails schema validation', async () => {
+    const invalidDoc = { _id: 'ccc', slug: 'bad', name: '', peakCount: 214 }; // empty name
+    mockFindOne.mockResolvedValue(invalidDoc);
+    const repo = createPeakListRepository(mockDb);
+
+    await expect(repo.findBySlug('bad')).rejects.toThrow(
+      'PeakList document with slug "bad" exists but failed validation — check logs for details.'
+    );
   });
 });

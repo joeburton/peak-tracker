@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 
 const {
   mockGetPeakList,
@@ -51,7 +51,7 @@ vi.mock('@/features/peaks/components/regional-breakdown-dialog', () => ({
   RegionalBreakdownDialog: mockRegionalBreakdownDialog,
 }));
 
-import PeakListPage from './page';
+import PeakListPage, { generateMetadata } from './page';
 
 const mockPeakList = {
   id: '1',
@@ -194,5 +194,41 @@ describe('PeakListPage', () => {
     const Page = await PeakListPage({ params: Promise.resolve({ slug: 'wainwrights' }) });
     render(Page);
     expect(mockRegionalBreakdownDialog).toHaveBeenCalled();
+  });
+
+  it('renders the loading skeleton while PeakListClient suspends', async () => {
+    let releaseSuspense: () => void = () => {};
+    mockPeakListClient.mockImplementation(() => {
+      throw new Promise<void>((resolve) => {
+        releaseSuspense = resolve;
+      });
+    });
+    const Page = await PeakListPage({ params: Promise.resolve({ slug: 'wainwrights' }) });
+    render(Page);
+    expect(screen.getByLabelText('Loading peak list')).toBeInTheDocument();
+    await act(async () => {
+      releaseSuspense();
+    });
+  });
+});
+
+describe('generateMetadata', () => {
+  beforeEach(() => {
+    mockGetPeakList.mockReset();
+  });
+
+  it('builds a title and description from the peak list', async () => {
+    mockGetPeakList.mockResolvedValue(mockPeakList);
+    const metadata = await generateMetadata({ params: Promise.resolve({ slug: 'wainwrights' }) });
+    expect(metadata).toEqual({
+      title: 'Wainwrights — Peak Tracker UK',
+      description: 'Track your progress across 214 Wainwrights.',
+    });
+  });
+
+  it('returns an empty object when the peak list does not exist', async () => {
+    mockGetPeakList.mockResolvedValue(null);
+    const metadata = await generateMetadata({ params: Promise.resolve({ slug: 'unknown' }) });
+    expect(metadata).toEqual({});
   });
 });

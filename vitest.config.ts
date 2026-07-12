@@ -19,6 +19,9 @@ export default defineConfig({
         'src/**/*.test.{ts,tsx}',
         'src/**/*.spec.{ts,tsx}',
         'src/app/layout.tsx',
+        // Runs in the browser SW context (self/caches/clients), not jsdom —
+        // covered by e2e/offline-functionality.test.ts and e2e/pwa.test.ts instead.
+        'src/sw.ts',
       ],
       thresholds: {
         lines: 80,

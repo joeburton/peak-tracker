@@ -140,6 +140,16 @@ describe('PeakRepository.findByListSlug', () => {
     expect(peak.updatedAt).toBe(testDateStr);
     expect(peak).not.toHaveProperty('_id');
   });
+
+  it('skips documents that fail schema validation', async () => {
+    const invalidDoc = { _id: 'ccc', ...baseDoc, name: '' }; // empty name
+    mockToArray.mockResolvedValue([doc1, invalidDoc]);
+    const repo = createPeakRepository(mockDb);
+
+    const result = await repo.findByListSlug('wainwrights');
+
+    expect(result).toEqual([{ id: 'aaa', ...baseModel }]);
+  });
 });
 
 describe('PeakRepository.findBySlug', () => {
@@ -175,6 +185,16 @@ describe('PeakRepository.findBySlug', () => {
     expect(result!.createdAt).toBe(testDateStr);
     expect(result!.updatedAt).toBe(testDateStr);
     expect(result).not.toHaveProperty('_id');
+  });
+
+  it('throws when the matching document fails schema validation', async () => {
+    const invalidDoc = { _id: 'ccc', ...baseDoc, name: '' }; // empty name
+    mockFindOne.mockResolvedValue(invalidDoc);
+    const repo = createPeakRepository(mockDb);
+
+    await expect(repo.findBySlug('scafell-pike')).rejects.toThrow(
+      'Peak document with slug "scafell-pike" exists but failed validation — check logs for details.'
+    );
   });
 });
 

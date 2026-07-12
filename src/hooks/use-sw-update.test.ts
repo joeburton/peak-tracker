@@ -148,6 +148,54 @@ describe('useSwUpdate', () => {
     expect(waiting.postMessage).toHaveBeenCalledWith({ type: 'SKIP_WAITING' });
     expect(swListeners['controllerchange']).toHaveLength(1);
 
+    // Simulate the browser firing controllerchange once the new SW takes over
+    for (const listener of swListeners['controllerchange'] ?? []) {
+      (listener as EventListener)(new Event('controllerchange'));
+    }
+    expect(reloadSpy).toHaveBeenCalledOnce();
+
     Object.defineProperty(window, 'location', { configurable: true, value: originalLocation });
+  });
+
+  it('does nothing when serviceWorker is not supported', () => {
+    // @ts-expect-error — simulating a browser without service worker support
+    delete navigator.serviceWorker;
+    const { result } = renderHook(() => useSwUpdate());
+    expect(result.current.updateAvailable).toBe(false);
+  });
+
+  it('ignores updatefound when there is no installing worker', async () => {
+    const registration = makeRegistration();
+    const { result } = renderHook(() => useSwUpdate());
+
+    await act(async () => {
+      readyResolve(registration);
+    });
+
+    await act(async () => {
+      const updateFoundListeners =
+        (registration as unknown as { _listeners: Record<string, EventListenerOrEventListenerObject[]> })
+          ._listeners['updatefound'] ?? [];
+      for (const listener of updateFoundListeners) {
+        (listener as EventListener)(new Event('updatefound'));
+      }
+    });
+
+    expect(result.current.updateAvailable).toBe(false);
+  });
+
+  it('applyUpdate is a no-op when there is no waiting worker', async () => {
+    const registration = makeRegistration();
+    const { result } = renderHook(() => useSwUpdate());
+
+    await act(async () => {
+      readyResolve(registration);
+    });
+
+    act(() => {
+      result.current.applyUpdate();
+    });
+
+    expect(swListeners['controllerchange']).toBeUndefined();
   });
 });
