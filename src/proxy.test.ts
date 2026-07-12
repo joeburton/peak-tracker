@@ -17,7 +17,6 @@ vi.mock('@clerk/nextjs/server', () => ({
   // Minimal path-to-regexp approximation — sufficient for the patterns in proxy.ts:
   //   '/'                → exact match
   //   '/offline'         → exact match
-  //   '/smoke-test'      → exact match
   //   '/peak-lists'      → exact match (bare index)
   //   '/peak-lists/(.*)' → /peak-lists/ + anything
   //   '/sign-in(.*)'     → /sign-in + anything (including bare /sign-in)
@@ -86,11 +85,6 @@ describe('proxy — public routes', () => {
 
   it('allows unauthenticated requests to /offline through', async () => {
     const res = await handler(unauthed, req('/offline'));
-    expect(res).toBeUndefined();
-  });
-
-  it('allows unauthenticated requests to /smoke-test through', async () => {
-    const res = await handler(unauthed, req('/smoke-test'));
     expect(res).toBeUndefined();
   });
 

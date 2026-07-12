@@ -5,7 +5,6 @@ import { unauthorizedResponse } from '@/lib/auth';
 const isPublicRoute = createRouteMatcher([
   '/',
   '/offline',
-  '/smoke-test',
   '/peak-lists', // bare index — must be listed separately from the wildcard below
   '/peak-lists/(.*)',
   '/sign-in(.*)',

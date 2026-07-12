@@ -22,6 +22,7 @@ beforeEach(() => {
 
 afterEach(() => {
   delete process.env.MONGODB_URI;
+  vi.unstubAllEnvs();
 });
 
 describe('getDb', () => {
@@ -99,5 +100,56 @@ describe('disconnect', () => {
 
     await expect(disconnect()).resolves.toBeUndefined();
     expect(mockClose).not.toHaveBeenCalled();
+  });
+});
+
+describe('in development mode', () => {
+  beforeEach(() => {
+    vi.stubEnv('NODE_ENV', 'development');
+  });
+
+  it('caches the connection on globalThis and reuses it across module reloads', async () => {
+    process.env.MONGODB_URI = 'mongodb://localhost:27017';
+    mockConnect.mockResolvedValue({ db: mockDb, close: mockClose });
+    mockDb.mockReturnValue({});
+
+    const { getDb } = await import('./mongodb');
+    await getDb();
+    await getDb();
+
+    expect(mockConnect).toHaveBeenCalledTimes(1);
+    expect(global._mongoClientPromise).toBeDefined();
+  });
+
+  it('clears the global cache on connection failure so the next call retries', async () => {
+    process.env.MONGODB_URI = 'mongodb://localhost:27017';
+    mockConnect
+      .mockRejectedValueOnce(new Error('Connection refused'))
+      .mockResolvedValue({ db: mockDb, close: mockClose });
+    mockDb.mockReturnValue({});
+
+    const { getDb } = await import('./mongodb');
+
+    await expect(getDb()).rejects.toThrow('Connection refused');
+    await getDb();
+
+    expect(mockConnect).toHaveBeenCalledTimes(2);
+  });
+
+  it('disconnect closes the client and clears the global cache', async () => {
+    process.env.MONGODB_URI = 'mongodb://localhost:27017';
+    mockConnect.mockResolvedValue({ db: mockDb, close: mockClose });
+    mockClose.mockResolvedValue(undefined);
+    mockDb.mockReturnValue({});
+
+    const { getDb, disconnect } = await import('./mongodb');
+    await getDb();
+    await disconnect();
+
+    expect(mockClose).toHaveBeenCalledTimes(1);
+    expect(global._mongoClientPromise).toBeUndefined();
+
+    await getDb();
+    expect(mockConnect).toHaveBeenCalledTimes(2);
   });
 });
