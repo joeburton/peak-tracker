@@ -360,13 +360,31 @@ Each milestone is a hard prerequisite for the next. No milestone may begin until
 
 **Focus:** Deploy Peak Tracker UK to Vercel.
 
-**Goal:** Production environment is live, connected to MongoDB Atlas and Clerk production keys, with a passing production build/deploy.
+**Scope note:** Clerk and MongoDB are already integrated in the application code (auth flows, `proxy.ts`, repository pattern, `MONGODB_URI` toggle). This milestone is about **production wiring**, not initial setup — provisioning production-grade instances of each, connecting them to a live Vercel deployment, and verifying the app works end-to-end on the public URL.
 
-**Tickets:** TBD — ticket breakdown not yet defined.
+**Goal:** Production environment is live, connected to MongoDB Atlas and Clerk production keys, with a passing production build/deploy and all core flows verified on the live URL.
 
-**Estimated tickets:** TBD
-**Complexity:** TBD
+**Tickets:**
+
+- `[Deployment]` Create Vercel project and connect the GitHub repository (production branch = `main`)
+- `[Deployment]` Provision a MongoDB Atlas cluster for production and run seed scripts against it (`seed-peak-lists.ts`, `seed-wainwrights.ts`, `seed-munros.ts`, `verify-seed.ts`)
+- `[Deployment]` Switch Clerk to a production instance — configure production keys and allowed redirect/origin URLs for the Vercel domain
+- `[Deployment]` Configure all production environment variables in Vercel (`MONGODB_URI`, Clerk keys, `NEXT_PUBLIC_APP_NAME`, `NEXT_PUBLIC_ENABLE_PWA`) per `.env.example`
+- `[Deployment]` Verify the production build on Vercel — confirm the git-based service worker revision hash (`next.config.ts`'s `spawnSync('git', ['rev-parse', 'HEAD'])`) resolves correctly in Vercel's build environment
+- `[Deployment]` Verify PWA behaviour in production — manifest, install prompt, service worker registration and offline fallback over HTTPS on the live domain
+- `[Deployment]` End-to-end smoke test on the live URL — sign in/up, browse peak lists, toggle progress, sync, offline mode
+- `[Deployment]` Document the deployment process and required environment variables in the repo (e.g. `docs/deployment.md`)
+
+**Estimated tickets:** 8
+**Complexity:** Medium
 **Dependencies:** Milestone 9
+
+**Done when:**
+
+- Production URL is live and publicly reachable over HTTPS
+- Sign in/up, peak browsing, progress toggle, sync, and offline mode all work on the live URL
+- MongoDB Atlas contains the full seeded dataset (214 Wainwrights, 282 Munros), verified via `verify-seed.ts`
+- `npm run build` passes in Vercel's build environment with no manual intervention
 
 ---
 
@@ -383,8 +401,8 @@ Each milestone is a hard prerequisite for the next. No milestone may begin until
 | 7 — Sync           | 10             | High       | M6         |
 | 8 — PWA            | 7              | Medium     | M7         |
 | 9 — Testing        | 5              | Medium     | M8         |
-| 10 — Deployment    | TBD            | TBD        | M9         |
-| **Total**          | **85+**        |            |            |
+| 10 — Deployment    | 8              | Medium     | M9         |
+| **Total**          | **93**         |            |            |
 
 ---
 
