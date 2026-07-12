@@ -356,6 +356,20 @@ Each milestone is a hard prerequisite for the next. No milestone may begin until
 
 ---
 
+## Milestone 10 — Deployment
+
+**Focus:** Deploy Peak Tracker UK to Vercel.
+
+**Goal:** Production environment is live, connected to MongoDB Atlas and Clerk production keys, with a passing production build/deploy.
+
+**Tickets:** TBD — ticket breakdown not yet defined.
+
+**Estimated tickets:** TBD
+**Complexity:** TBD
+**Dependencies:** Milestone 9
+
+---
+
 ## Summary
 
 | Milestone          | Tickets (est.) | Complexity | Depends on |
@@ -369,7 +383,8 @@ Each milestone is a hard prerequisite for the next. No milestone may begin until
 | 7 — Sync           | 10             | High       | M6         |
 | 8 — PWA            | 7              | Medium     | M7         |
 | 9 — Testing        | 5              | Medium     | M8         |
-| **Total**          | **85**         |            |            |
+| 10 — Deployment    | TBD            | TBD        | M9         |
+| **Total**          | **85+**        |            |            |
 
 ---
 
