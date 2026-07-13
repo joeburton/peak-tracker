@@ -2471,6 +2471,219 @@ Depends on: `[Testing] Final quality gate run`
 
 ---
 
+## Milestone 10 — Deployment
+
+**Scope note:** Clerk and MongoDB are already integrated in the application code. These tickets cover production wiring — provisioning production instances and connecting them to a live Vercel deployment — not initial setup.
+
+---
+
+### [Deployment] Create Vercel project and connect GitHub repository
+
+**GitHub Issue:** [#173](https://github.com/joeburton/peak-tracker/issues/173)
+**Milestone:** Milestone 10 — Deployment
+**Branch:** `feature/173-vercel-project-setup`
+
+**Description:**
+Create a Vercel project connected to the `joeburton/peak-tracker` GitHub repository. Configure the production branch and enable preview deployments for pull requests.
+
+**Acceptance Criteria:**
+
+- [ ] Vercel project created and linked to the GitHub repository
+- [ ] Production branch set to `main`
+- [ ] Preview deployments enabled for PRs
+
+**Dependencies:**
+Depends on: Milestone 9 complete
+
+**Testing Requirements:**
+
+- [ ] Build passes
+- [ ] Lint passes
+- [ ] Type check passes
+
+---
+
+### [Deployment] Provision MongoDB Atlas cluster and seed production data
+
+**GitHub Issue:** [#174](https://github.com/joeburton/peak-tracker/issues/174)
+**Milestone:** Milestone 10 — Deployment
+**Branch:** `feature/174-atlas-provisioning`
+
+**Description:**
+Provision a MongoDB Atlas cluster for the `peakTracker` production database. Configure network access for Vercel, then run the seed scripts against it and verify the result.
+
+**Acceptance Criteria:**
+
+- [ ] Atlas cluster provisioned with network access configured for Vercel
+- [ ] `peakTracker` database seeded via `seed-peak-lists.ts`, `seed-wainwrights.ts`, `seed-munros.ts`
+- [ ] `verify-seed.ts` exits zero against the Atlas cluster (214 Wainwrights, 282 Munros, all valid)
+
+**Dependencies:**
+Depends on: `[Deployment] Create Vercel project and connect GitHub repository`
+
+**Testing Requirements:**
+
+- [ ] `verify-seed.ts` passes against Atlas
+- [ ] Build passes
+- [ ] Lint passes
+- [ ] Type check passes
+
+---
+
+### [Deployment] Switch Clerk to production instance
+
+**GitHub Issue:** [#175](https://github.com/joeburton/peak-tracker/issues/175)
+**Milestone:** Milestone 10 — Deployment
+**Branch:** `feature/175-clerk-production`
+
+**Description:**
+Create and configure a Clerk production instance (separate from the development instance currently in use). Obtain production API keys and configure allowed redirect/origin URLs for the Vercel production domain.
+
+**Acceptance Criteria:**
+
+- [ ] Clerk production instance created
+- [ ] Production publishable and secret keys obtained
+- [ ] Redirect and origin URLs configured for the Vercel production domain
+
+**Dependencies:**
+Depends on: `[Deployment] Create Vercel project and connect GitHub repository`
+
+**Testing Requirements:**
+
+- [ ] Build passes
+- [ ] Lint passes
+- [ ] Type check passes
+
+---
+
+### [Deployment] Configure production environment variables in Vercel
+
+**GitHub Issue:** [#176](https://github.com/joeburton/peak-tracker/issues/176)
+**Milestone:** Milestone 10 — Deployment
+**Branch:** `feature/176-vercel-env-vars`
+
+**Description:**
+Set all required environment variables in Vercel's production environment per `.env.example` — `MONGODB_URI` (Atlas connection string), Clerk production keys, `NEXT_PUBLIC_APP_NAME`, `NEXT_PUBLIC_ENABLE_PWA`.
+
+**Acceptance Criteria:**
+
+- [ ] All `.env.example` keys present in Vercel's production environment
+- [ ] No secrets committed to the repository
+
+**Dependencies:**
+Depends on: `[Deployment] Provision MongoDB Atlas cluster and seed production data`, `[Deployment] Switch Clerk to production instance`
+
+**Testing Requirements:**
+
+- [ ] Build passes
+- [ ] Lint passes
+- [ ] Type check passes
+
+---
+
+### [Deployment] Verify production build on Vercel
+
+**GitHub Issue:** [#177](https://github.com/joeburton/peak-tracker/issues/177)
+**Milestone:** Milestone 10 — Deployment
+**Branch:** `feature/177-verify-production-build`
+
+**Description:**
+Trigger a production deployment and confirm the build succeeds in Vercel's build environment. Specifically verify the git-based service worker revision hash in `next.config.ts` (`spawnSync('git', ['rev-parse', 'HEAD'])`) resolves correctly rather than silently falling back to `crypto.randomUUID()` on every build.
+
+**Acceptance Criteria:**
+
+- [ ] Production deployment completes successfully
+- [ ] Service worker revision hash resolves from the actual git commit in Vercel's build environment
+
+**Dependencies:**
+Depends on: `[Deployment] Configure production environment variables in Vercel`
+
+**Testing Requirements:**
+
+- [ ] Build passes
+- [ ] Lint passes
+- [ ] Type check passes
+
+---
+
+### [Deployment] Verify PWA behaviour in production
+
+**GitHub Issue:** [#178](https://github.com/joeburton/peak-tracker/issues/178)
+**Milestone:** Milestone 10 — Deployment
+**Branch:** `feature/178-verify-pwa-production`
+
+**Description:**
+Verify the web app manifest, install prompt, service worker registration/caching, and `/offline` fallback all work correctly on the live HTTPS domain.
+
+**Acceptance Criteria:**
+
+- [ ] Web app manifest served correctly and the app is installable
+- [ ] Service worker registers and caches core routes on the production domain
+- [ ] `/offline` fallback works when navigating without network
+
+**Dependencies:**
+Depends on: `[Deployment] Verify production build on Vercel`
+
+**Testing Requirements:**
+
+- [ ] Build passes
+- [ ] Lint passes
+- [ ] Type check passes
+
+---
+
+### [Deployment] End-to-end smoke test on live URL
+
+**GitHub Issue:** [#179](https://github.com/joeburton/peak-tracker/issues/179)
+**Milestone:** Milestone 10 — Deployment
+**Branch:** `feature/179-production-smoke-test`
+
+**Description:**
+Verify sign in/up, peak list browsing, progress toggle, sync, and offline mode all work correctly against the live production deployment (Clerk production + MongoDB Atlas).
+
+**Acceptance Criteria:**
+
+- [ ] Sign in and sign up work against Clerk production
+- [ ] Peak lists and peaks load from MongoDB Atlas
+- [ ] Progress toggle and sync work end-to-end on the live URL
+- [ ] Offline mode functions on the live domain
+
+**Dependencies:**
+Depends on: `[Deployment] Verify PWA behaviour in production`
+
+**Testing Requirements:**
+
+- [ ] Build passes
+- [ ] Lint passes
+- [ ] Type check passes
+
+---
+
+### [Deployment] Document deployment process
+
+**GitHub Issue:** [#180](https://github.com/joeburton/peak-tracker/issues/180)
+**Milestone:** Milestone 10 — Deployment
+**Branch:** `feature/180-deployment-docs`
+
+**Description:**
+Document the full deployment process and required environment variables in `docs/deployment.md`, so the deployment is reproducible by someone unfamiliar with the setup.
+
+**Acceptance Criteria:**
+
+- [ ] `docs/deployment.md` created covering Vercel project setup, Atlas provisioning, Clerk production configuration, and environment variables
+- [ ] Steps are reproducible by someone unfamiliar with the setup
+
+**Dependencies:**
+Depends on: `[Deployment] End-to-end smoke test on live URL`
+
+**Testing Requirements:**
+
+- [ ] Build passes
+- [ ] Lint passes
+- [ ] Type check passes
+
+---
+
 ## Summary
 
 | Milestone            | Ticket Count |
@@ -2484,7 +2697,8 @@ Depends on: `[Testing] Final quality gate run`
 | 7 — Synchronisation  | 10           |
 | 8 — PWA              | 7            |
 | 9 — Testing          | 5            |
-| **Total**            | **85**       |
+| 10 — Deployment      | 8            |
+| **Total**            | **93**       |
 
 ---
 

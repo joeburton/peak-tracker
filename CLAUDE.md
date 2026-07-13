@@ -353,6 +353,7 @@ Depends on: #1, #4
 | `[Sync]`       | Synchronisation engine, API routes, conflict resolution          |
 | `[PWA]`        | Service worker, offline support, install prompt                  |
 | `[Testing]`    | Unit tests, integration tests, Playwright E2E                    |
+| `[Deployment]` | Vercel setup, production env config, MongoDB Atlas, Clerk production |
 
 ---
 
@@ -371,6 +372,7 @@ Create all milestones in GitHub before creating any issues.
 | Milestone 7 | Synchronisation — API routes, sync engine, conflict resolution     |
 | Milestone 8 | PWA — service worker, offline support, install prompt              |
 | Milestone 9 | Testing — coverage to 80%, E2E suite passing                       |
+| Milestone 10 | Deployment — Vercel, MongoDB Atlas, Clerk production instance     |
 
 ---
 
