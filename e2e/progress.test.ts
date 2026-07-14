@@ -45,15 +45,18 @@ test.describe('Progress toggle updates statistics', () => {
     await toggleButton.click();
     await expect(page.getByText(/Synced/)).toBeVisible({ timeout: 15_000 });
 
-    await page.reload();
-    await page.waitForLoadState('networkidle');
+    try {
+      await page.reload();
+      await page.waitForLoadState('networkidle');
 
-    await expect(completedStat).toHaveText(String(initialCompleted + 1));
-
-    // Undo — keep the test account's progress unchanged for future runs.
-    const undoButton = page.getByRole('button', { name: `Mark ${peakName} as incomplete` });
-    await undoButton.click();
-    await expect(page.getByText(/Synced/)).toBeVisible({ timeout: 15_000 });
+      await expect(completedStat).toHaveText(String(initialCompleted + 1));
+    } finally {
+      // Undo — keep the test account's progress unchanged for future runs,
+      // even if the assertion above failed.
+      const undoButton = page.getByRole('button', { name: `Mark ${peakName} as incomplete` });
+      await undoButton.click();
+      await expect(page.getByText(/Synced/)).toBeVisible({ timeout: 15_000 });
+    }
 
     await page.reload();
     await page.waitForLoadState('networkidle');

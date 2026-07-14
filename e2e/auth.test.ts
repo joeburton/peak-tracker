@@ -48,7 +48,7 @@ test.describe('Sign in and sign out', () => {
     await page.waitForLoadState('networkidle');
 
     // Signed in: account button replaces the sign-in link
-    await expect(page.getByRole('button', { name: /open user menu/i })).toBeVisible({
+    await expect(page.getByRole('button', { name: /open user button/i })).toBeVisible({
       timeout: 10000,
     });
     await expect(page.getByRole('link', { name: /sign in/i })).not.toBeVisible();
@@ -59,6 +59,6 @@ test.describe('Sign in and sign out', () => {
 
     // Signed out again: sign-in link is back, account button is gone
     await expect(page.getByRole('link', { name: /sign in/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /open user menu/i })).not.toBeVisible();
+    await expect(page.getByRole('button', { name: /open user button/i })).not.toBeVisible();
   });
 });
