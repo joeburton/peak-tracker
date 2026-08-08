@@ -20,6 +20,7 @@ export const queryKeys = {
     byList: (userId: string, peakListSlug: string) => ['progress', userId, peakListSlug] as const,
   },
   statistics: {
+    all: () => ['statistics'] as const,
     byList: (userId: string, peakListSlug: string) => ['statistics', userId, peakListSlug] as const,
   },
 } as const;

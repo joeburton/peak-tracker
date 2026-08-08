@@ -20,7 +20,7 @@ export async function runSyncCycle(
   const local = await localRepo.get(userId);
 
   if (local?.dirty) {
-    await pushProgress(userId, localRepo, syncActions);
+    await pushProgress(userId, localRepo, syncActions, queryClient);
   }
 
   await pullProgress(userId, localRepo, syncActions, queryClient);

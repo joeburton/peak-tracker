@@ -1,5 +1,7 @@
+import type { QueryClient } from '@tanstack/react-query';
 import type { ILocalProgressRepository } from '@/db/repositories/local-progress-repository';
 import { UserProgressSchema } from '@/lib/validation/schemas';
+import { queryKeys } from '@/lib/queryKeys';
 
 export interface SyncActions {
   setSyncing: (value: boolean) => void;
@@ -18,7 +20,8 @@ export interface SyncActions {
 export async function pushProgress(
   userId: string,
   localRepo: ILocalProgressRepository,
-  syncActions: SyncActions
+  syncActions: SyncActions,
+  queryClient: QueryClient
 ): Promise<void> {
   const local = await localRepo.get(userId);
   if (!local?.dirty) return;
@@ -58,5 +61,7 @@ export async function pushProgress(
   const parsed = UserProgressSchema.safeParse(await response.json());
   const syncedAt = parsed.success ? parsed.data.updatedAt : new Date().toISOString();
   await localRepo.markClean(userId, syncedAt);
+  await queryClient.invalidateQueries({ queryKey: queryKeys.progress.all() });
+  await queryClient.invalidateQueries({ queryKey: queryKeys.statistics.all() });
   syncActions.setSyncComplete(syncedAt);
 }

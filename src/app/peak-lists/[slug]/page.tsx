@@ -6,7 +6,7 @@ import { getPeakList } from '@/features/peaks/services/peak-list.service';
 import { getPeaks } from '@/features/peaks/services/peak.service';
 import { getProgress } from '@/features/peaks/services/progress.service';
 import { computeStatistics } from '@/features/peaks/services/statistics.service';
-import { Statistics } from '@/features/peaks/components/statistics';
+import { StatisticsClient } from '@/features/peaks/components/statistics-client';
 import { RegionalBreakdownDialog } from '@/features/peaks/components/regional-breakdown-dialog';
 import { PeakListClient } from '@/features/peaks/components/peak-list-client';
 
@@ -38,7 +38,7 @@ export default async function PeakListPage({ params }: Props) {
 
   if (!peakList) notFound();
 
-  const statistics = computeStatistics(peaks, serverCompletedIds);
+  const { byRegion } = computeStatistics(peaks, serverCompletedIds);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -49,9 +49,13 @@ export default async function PeakListPage({ params }: Props) {
             <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
               Progress
             </h2>
-            <RegionalBreakdownDialog regions={statistics.byRegion} />
+            <RegionalBreakdownDialog regions={byRegion} />
           </div>
-          <Statistics statistics={statistics} label={`${peakList.name} progress statistics`} />
+          <StatisticsClient
+            peaks={peaks}
+            serverCompletedIds={serverCompletedIds}
+            label={`${peakList.name} progress statistics`}
+          />
         </div>
         <div className="h-px bg-border" />
         <Suspense fallback={<PeakListSkeleton />}>

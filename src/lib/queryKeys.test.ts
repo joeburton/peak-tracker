@@ -23,10 +23,17 @@ describe('queryKeys', () => {
   });
 
   it('builds statistics keys', () => {
+    expect(queryKeys.statistics.all()).toEqual(['statistics']);
     expect(queryKeys.statistics.byList('user_1', 'wainwrights')).toEqual([
       'statistics',
       'user_1',
       'wainwrights',
     ]);
+  });
+
+  it('statistics.all() is a prefix of statistics.byList() — supports partial invalidation', () => {
+    const all = queryKeys.statistics.all();
+    const byList = queryKeys.statistics.byList('user_1', 'wainwrights');
+    expect(byList.slice(0, all.length)).toEqual(all);
   });
 });
