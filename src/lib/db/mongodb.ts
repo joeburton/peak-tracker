@@ -11,6 +11,7 @@ let _clientPromise: Promise<MongoClient> | undefined;
 
 function createClientPromise(): Promise<MongoClient> {
   const uri = process.env.MONGODB_URI;
+  console.log('MONGODB_URI:', uri);
   if (!uri) throw new Error('MONGODB_URI environment variable is not defined');
 
   const promise = new MongoClient(uri, { maxPoolSize: 1 }).connect();
