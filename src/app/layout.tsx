@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
@@ -25,7 +25,6 @@ export const metadata: Metadata = {
   title: 'Peak Tracker UK',
   description:
     'Track your progress across UK hill and mountain lists — Wainwrights, Munros, and more.',
-  themeColor: '#18181b',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
@@ -34,6 +33,10 @@ export const metadata: Metadata = {
   icons: {
     apple: '/icon-192x192.png',
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#18181b',
 };
 
 export default function RootLayout({

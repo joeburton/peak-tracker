@@ -31,6 +31,10 @@ function makeSyncActions() {
   };
 }
 
+function makeQueryClient() {
+  return { invalidateQueries: vi.fn().mockResolvedValue(undefined) } as unknown as import('@tanstack/react-query').QueryClient;
+}
+
 const SERVER_RESPONSE = {
   userId: 'user_123',
   completedPeakIds: DIRTY_PROGRESS.completedPeakIds,
@@ -59,7 +63,7 @@ describe('pushProgress', () => {
     const localRepo = makeLocalRepo({ get: vi.fn().mockResolvedValue(undefined) });
     const syncActions = makeSyncActions();
 
-    await pushProgress('user_123', localRepo, syncActions);
+    await pushProgress('user_123', localRepo, syncActions, makeQueryClient());
 
     expect(fetch).not.toHaveBeenCalled();
     expect(syncActions.setSyncing).not.toHaveBeenCalled();
@@ -71,7 +75,7 @@ describe('pushProgress', () => {
     });
     const syncActions = makeSyncActions();
 
-    await pushProgress('user_123', localRepo, syncActions);
+    await pushProgress('user_123', localRepo, syncActions, makeQueryClient());
 
     expect(fetch).not.toHaveBeenCalled();
     expect(syncActions.setSyncing).not.toHaveBeenCalled();
@@ -81,7 +85,7 @@ describe('pushProgress', () => {
     const localRepo = makeLocalRepo({ markClean: vi.fn() });
     const syncActions = makeSyncActions();
 
-    await pushProgress('user_123', localRepo, syncActions);
+    await pushProgress('user_123', localRepo, syncActions, makeQueryClient());
 
     expect(syncActions.setSyncing).toHaveBeenCalledWith(true);
   });
@@ -91,7 +95,7 @@ describe('pushProgress', () => {
     vi.stubGlobal('fetch', mockFetch);
     const localRepo = makeLocalRepo({ markClean: vi.fn() });
 
-    await pushProgress('user_123', localRepo, makeSyncActions());
+    await pushProgress('user_123', localRepo, makeSyncActions(), makeQueryClient());
 
     expect(mockFetch).toHaveBeenCalledWith('/api/progress', {
       method: 'PUT',
@@ -109,11 +113,38 @@ describe('pushProgress', () => {
     const localRepo = makeLocalRepo({ markClean: mockMarkClean });
     const syncActions = makeSyncActions();
 
-    await pushProgress('user_123', localRepo, syncActions);
+    await pushProgress('user_123', localRepo, syncActions, makeQueryClient());
 
     expect(mockMarkClean).toHaveBeenCalledWith('user_123', SERVER_RESPONSE.updatedAt);
     expect(syncActions.setSyncComplete).toHaveBeenCalledWith(SERVER_RESPONSE.updatedAt);
     expect(syncActions.setSyncError).not.toHaveBeenCalled();
+  });
+
+  it('invalidates progress and statistics queries on success', async () => {
+    const queryClient = makeQueryClient();
+
+    await pushProgress('user_123', makeLocalRepo({ markClean: vi.fn() }), makeSyncActions(), queryClient);
+
+    expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['progress'] });
+    expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['statistics'] });
+  });
+
+  it('does not invalidate queries when push fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(errorResponse(500, { error: 'Server error' })));
+    const queryClient = makeQueryClient();
+
+    await pushProgress('user_123', makeLocalRepo(), makeSyncActions(), queryClient);
+
+    expect(queryClient.invalidateQueries).not.toHaveBeenCalled();
+  });
+
+  it('does not invalidate queries on network failure', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Failed to fetch')));
+    const queryClient = makeQueryClient();
+
+    await pushProgress('user_123', makeLocalRepo(), makeSyncActions(), queryClient);
+
+    expect(queryClient.invalidateQueries).not.toHaveBeenCalled();
   });
 
   it('falls back to a client timestamp when server response body is invalid', async () => {
@@ -122,7 +153,7 @@ describe('pushProgress', () => {
     const localRepo = makeLocalRepo({ markClean: mockMarkClean });
     const syncActions = makeSyncActions();
 
-    await pushProgress('user_123', localRepo, syncActions);
+    await pushProgress('user_123', localRepo, syncActions, makeQueryClient());
 
     // markClean is still called — sync completes with a client-generated fallback timestamp
     expect(mockMarkClean).toHaveBeenCalledWith('user_123', expect.any(String));
@@ -138,7 +169,7 @@ describe('pushProgress', () => {
     const localRepo = makeLocalRepo({ markClean: mockMarkClean });
     const syncActions = makeSyncActions();
 
-    await pushProgress('user_123', localRepo, syncActions);
+    await pushProgress('user_123', localRepo, syncActions, makeQueryClient());
 
     expect(mockMarkClean).not.toHaveBeenCalled();
     expect(syncActions.setSyncError).toHaveBeenCalledWith('Internal Server Error');
@@ -149,7 +180,7 @@ describe('pushProgress', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(errorResponse(409, {})));
     const syncActions = makeSyncActions();
 
-    await pushProgress('user_123', makeLocalRepo(), syncActions);
+    await pushProgress('user_123', makeLocalRepo(), syncActions, makeQueryClient());
 
     expect(syncActions.setSyncError).toHaveBeenCalledWith('Push failed with status 409');
   });
@@ -158,7 +189,7 @@ describe('pushProgress', () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Failed to fetch')));
     const syncActions = makeSyncActions();
 
-    await pushProgress('user_123', makeLocalRepo(), syncActions);
+    await pushProgress('user_123', makeLocalRepo(), syncActions, makeQueryClient());
 
     expect(syncActions.setSyncError).toHaveBeenCalledWith('Failed to fetch');
     expect(syncActions.setSyncComplete).not.toHaveBeenCalled();
@@ -168,7 +199,7 @@ describe('pushProgress', () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue('connection refused'));
     const syncActions = makeSyncActions();
 
-    await pushProgress('user_123', makeLocalRepo(), syncActions);
+    await pushProgress('user_123', makeLocalRepo(), syncActions, makeQueryClient());
 
     expect(syncActions.setSyncError).toHaveBeenCalledWith('Network error');
   });

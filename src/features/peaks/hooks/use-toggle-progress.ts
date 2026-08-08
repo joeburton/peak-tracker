@@ -23,7 +23,6 @@ export function useToggleProgress(userId: string | null) {
   const toggle = useCallback(
     async (peakId: string, currentlyCompleted: boolean) => {
       if (!userId) return;
-      console.log('[toggle]', { isOnline, userId }); // ← add this
 
       // Optimistic update — synchronous, so the UI responds immediately
       if (currentlyCompleted) {

@@ -68,6 +68,7 @@ export async function pullProgress(
     const now = new Date().toISOString();
     await localRepo.markClean(userId, now);
     await queryClient.invalidateQueries({ queryKey: queryKeys.progress.all() });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.statistics.all() });
     syncActions.setSyncComplete(now);
   } else {
     // Local is same or newer — no update; push phase will handle sync completion

@@ -49,7 +49,7 @@ describe('runSyncCycle', () => {
 
     await runSyncCycle('user_123', localRepo, syncActions, queryClient);
 
-    expect(mockPushProgress).toHaveBeenCalledWith('user_123', localRepo, syncActions);
+    expect(mockPushProgress).toHaveBeenCalledWith('user_123', localRepo, syncActions, queryClient);
     expect(mockPullProgress).toHaveBeenCalledWith('user_123', localRepo, syncActions, queryClient);
   });
 

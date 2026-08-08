@@ -112,7 +112,8 @@ describe('pullProgress', () => {
       version: SERVER_PROGRESS.version,
     });
     expect(mockMarkClean).toHaveBeenCalledWith('user_123', expect.any(String));
-    expect(queryClient.invalidateQueries).toHaveBeenCalled();
+    expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['progress'] });
+    expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['statistics'] });
     expect(syncActions.setSyncComplete).toHaveBeenCalledWith(expect.any(String));
   });
 
@@ -128,12 +129,14 @@ describe('pullProgress', () => {
       upsert: mockUpsert,
     });
     const syncActions = makeSyncActions();
+    const queryClient = makeQueryClient();
 
-    await pullProgress('user_123', localRepo, syncActions, makeQueryClient());
+    await pullProgress('user_123', localRepo, syncActions, queryClient);
 
     expect(mockUpsert).not.toHaveBeenCalled();
     expect(syncActions.setSyncComplete).not.toHaveBeenCalled();
     expect(syncActions.setSyncing).toHaveBeenCalledWith(false);
+    expect(queryClient.invalidateQueries).not.toHaveBeenCalled();
   });
 
   it('updates local when no local record exists', async () => {
