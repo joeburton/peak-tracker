@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { StatisticsClient } from './statistics-client';
 import { useProgressStore } from '@/stores/progress';
 import type { Peak } from '@/lib/types/domain';
@@ -91,7 +91,9 @@ describe('StatisticsClient', () => {
       <StatisticsClient peaks={PEAKS} serverCompletedIds={[]} />
     );
 
-    expect(screen.getByText('3')).toBeInTheDocument(); // total
+    const totalRow = screen.getByText('total').closest('div') as HTMLElement;
+    expect(within(totalRow).getByText('3')).toBeInTheDocument(); // total
+    expect(screen.getByText('0')).toBeInTheDocument(); // completed
     expect(screen.getByText('0%')).toBeInTheDocument();
   });
 
