@@ -1,19 +1,19 @@
-'use client'
+'use client';
 
-import { create } from 'zustand'
-import { persist, createJSONStorage } from 'zustand/middleware'
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
-export type Theme = 'light' | 'dark' | 'system'
-export type ViewMode = 'list' | 'map'
+export type Theme = 'light' | 'dark' | 'system';
+export type ViewMode = 'list' | 'map';
 
 interface UiPreferencesState {
-  theme: Theme
-  viewMode: ViewMode
-  sidebarOpen: boolean
-  setTheme: (theme: Theme) => void
-  setViewMode: (viewMode: ViewMode) => void
-  setSidebarOpen: (open: boolean) => void
-  toggleSidebar: () => void
+  theme: Theme;
+  viewMode: ViewMode;
+  sidebarOpen: boolean;
+  setTheme: (theme: Theme) => void;
+  setViewMode: (viewMode: ViewMode) => void;
+  setSidebarOpen: (open: boolean) => void;
+  toggleSidebar: () => void;
 }
 
 export const useUiPreferencesStore = create<UiPreferencesState>()(
@@ -35,6 +35,6 @@ export const useUiPreferencesStore = create<UiPreferencesState>()(
         theme: state.theme,
         viewMode: state.viewMode,
       }),
-    },
-  ),
-)
+    }
+  )
+);

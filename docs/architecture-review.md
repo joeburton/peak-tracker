@@ -113,30 +113,33 @@ Search, filter, and sort state belongs in the URL — it provides browser histor
 
 All URL param keys and parsers are centralised in `src/lib/nuqs/parsers.ts`. This is the single source of truth — analogous to `src/lib/queryKeys.ts` for TanStack Query.
 
-| Param            | Key          | Type               | Default  | Parser            |
-| ---------------- | ------------ | ------------------ | -------- | ----------------- |
-| Search           | `?search=`   | `string`           | `''`     | `searchParser`    |
-| Completion filter| `?completion=` | `CompletionFilter` | `'all'`  | `completionParser`|
-| Region filter    | `?region=`   | `string`           | `''`     | `regionParser`    |
-| Sort field       | `?sort=`     | `SortField`        | `'name'` | `sortParser`      |
-| Sort direction   | `?dir=`      | `SortDirection`    | `'asc'`  | `dirParser`       |
+| Param             | Key            | Type               | Default  | Parser             |
+| ----------------- | -------------- | ------------------ | -------- | ------------------ |
+| Search            | `?search=`     | `string`           | `''`     | `searchParser`     |
+| Completion filter | `?completion=` | `CompletionFilter` | `'all'`  | `completionParser` |
+| Region filter     | `?region=`     | `string`           | `''`     | `regionParser`     |
+| Sort field        | `?sort=`       | `SortField`        | `'name'` | `sortParser`       |
+| Sort direction    | `?dir=`        | `SortDirection`    | `'asc'`  | `dirParser`        |
 
 Enum parsers derive their valid values from Zod schemas (`CompletionFilterSchema.options`, `SortFieldSchema.options`, `SortDirectionSchema.options`) — the two stay in sync automatically.
 
 **Usage pattern in components:**
 
 ```ts
-import { useQueryState, useQueryStates } from 'nuqs'
-import { SEARCH_PARAM, searchParser, COMPLETION_PARAM, completionParser } from '@/lib/nuqs/parsers'
+import { useQueryState, useQueryStates } from 'nuqs';
+import { SEARCH_PARAM, searchParser, COMPLETION_PARAM, completionParser } from '@/lib/nuqs/parsers';
 
 // Search — merge throttle into the parser with .withOptions() to debounce URL writes
-const [search, setSearch] = useQueryState(SEARCH_PARAM, searchParser.withOptions({ throttleMs: 300 }))
+const [search, setSearch] = useQueryState(
+  SEARCH_PARAM,
+  searchParser.withOptions({ throttleMs: 300 })
+);
 
 // Filters — group with useQueryStates for atomic updates
 const [{ completion, region }, setFilters] = useQueryStates({
   [COMPLETION_PARAM]: completionParser,
   [REGION_PARAM]: regionParser,
-})
+});
 ```
 
 Invalid URL param values (e.g. `?completion=bogus`) are rejected by the parser and fall back to the default — no runtime cast, no silent corruption.

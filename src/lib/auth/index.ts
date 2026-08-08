@@ -1,8 +1,8 @@
-import { auth } from '@clerk/nextjs/server'
-import { NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs/server';
+import { NextResponse } from 'next/server';
 
-type AuthSuccess = { userId: string; error: null }
-type AuthFailure = { userId: null; error: NextResponse }
+type AuthSuccess = { userId: string; error: null };
+type AuthFailure = { userId: null; error: NextResponse };
 
 /**
  * For Server Components on routes already protected by proxy.ts.
@@ -11,19 +11,19 @@ type AuthFailure = { userId: null; error: NextResponse }
  */
 export async function getServerUserId(): Promise<string> {
   const { userId } = await auth().catch((err: unknown) => {
-    throw new Error('Authentication service unavailable.', { cause: err })
-  })
+    throw new Error('Authentication service unavailable.', { cause: err });
+  });
   if (!userId) {
     throw new Error(
       'getServerUserId() called without an authenticated session. ' +
         'Ensure the route is protected by proxy.ts before calling this utility.'
-    )
+    );
   }
-  return userId
+  return userId;
 }
 
 export function unauthorizedResponse(): NextResponse {
-  return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 }
 
 /**
@@ -35,15 +35,15 @@ export function unauthorizedResponse(): NextResponse {
  */
 export async function requireAuth(): Promise<AuthSuccess | AuthFailure> {
   try {
-    const { userId } = await auth()
+    const { userId } = await auth();
     if (!userId) {
-      return { userId: null, error: unauthorizedResponse() }
+      return { userId: null, error: unauthorizedResponse() };
     }
-    return { userId, error: null }
+    return { userId, error: null };
   } catch {
     return {
       userId: null,
       error: NextResponse.json({ error: 'Internal Server Error' }, { status: 500 }),
-    }
+    };
   }
 }

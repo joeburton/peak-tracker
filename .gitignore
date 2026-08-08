@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-.env.local
-notes.txt
-=======
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
@@ -45,6 +41,12 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# Serwist — generated service worker files
+public/sw.js
+public/sw.js.map
+public/swe-worker*.js
+public/swe-worker*.js.map
+
 notes.txt
 
 # Claude Code settings
@@ -60,4 +62,4 @@ notes.txt
 
 # OS
 Thumbs.db
->>>>>>> develop
+e2e/.auth/

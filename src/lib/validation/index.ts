@@ -5,7 +5,7 @@ export {
   CompletionFilterSchema,
   SortFieldSchema,
   SortDirectionSchema,
-} from './schemas'
+} from './schemas';
 export type {
   PeakList,
   Peak,
@@ -15,4 +15,4 @@ export type {
   CompletionFilter,
   SortField,
   SortDirection,
-} from './schemas'
+} from './schemas';

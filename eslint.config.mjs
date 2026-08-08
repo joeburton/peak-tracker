@@ -34,6 +34,10 @@ const eslintConfig = defineConfig([
     'node_modules/**',
     'coverage/**',
     'playwright-report/**',
+    'public/sw.js',
+    'public/sw.js.map',
+    'public/swe-worker*.js',
+    'public/swe-worker*.js.map',
   ]),
 ]);
 

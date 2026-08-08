@@ -10,9 +10,23 @@ vi.mock('./auth-nav', () => ({
   AuthNav: () => <div data-testid="auth-nav" />,
 }));
 
+vi.mock('@/components/sync-status', () => ({
+  SyncStatus: () => null,
+}));
+
 vi.mock('next/link', () => ({
-  default: ({ href, children, ...props }: { href: string; children: React.ReactNode; [key: string]: unknown }) => (
-    <a href={href} {...props}>{children}</a>
+  default: ({
+    href,
+    children,
+    ...props
+  }: {
+    href: string;
+    children: React.ReactNode;
+    [key: string]: unknown;
+  }) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
   ),
 }));
 

@@ -1,19 +1,19 @@
-import Dexie, { type EntityTable } from 'dexie'
-import type { LocalProgress, LocalSyncMetadata, LocalUserPreferences } from './schema'
+import Dexie, { type EntityTable } from 'dexie';
+import type { LocalProgress, LocalSyncMetadata, LocalUserPreferences } from './schema';
 
 export class PeakTrackerDb extends Dexie {
-  progress!: EntityTable<LocalProgress, 'userId'>
-  userPreferences!: EntityTable<LocalUserPreferences, 'userId'>
-  syncMetadata!: EntityTable<LocalSyncMetadata, 'id'>
+  progress!: EntityTable<LocalProgress, 'userId'>;
+  userPreferences!: EntityTable<LocalUserPreferences, 'userId'>;
+  syncMetadata!: EntityTable<LocalSyncMetadata, 'id'>;
 
   constructor() {
-    super('peakTracker')
+    super('peakTracker');
 
     this.version(1).stores({
       // userId: primary key
       // dirty: indexed — enables efficient sync queries (find all unsynced records)
       progress: 'userId, dirty',
-    })
+    });
 
     this.version(2)
       .stores({
@@ -23,7 +23,7 @@ export class PeakTrackerDb extends Dexie {
       .upgrade(() => {
         // Additive migration — Dexie creates the userPreferences table from the
         // stores() definition above. No existing records need to be transformed.
-      })
+      });
 
     this.version(3)
       .stores({
@@ -33,10 +33,10 @@ export class PeakTrackerDb extends Dexie {
       .upgrade(() => {
         // Additive migration — Dexie creates the syncMetadata table from the
         // stores() definition above. No existing records need to be transformed.
-      })
+      });
   }
 }
 
 // Singleton instance for use across the application.
 // Repositories accept a PeakTrackerDb parameter for testability.
-export const db = new PeakTrackerDb()
+export const db = new PeakTrackerDb();

@@ -6,6 +6,9 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { QueryProvider } from '@/components/query-provider';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
+import { SyncProvider } from '@/components/sync-provider';
+import { InstallPrompt } from '@/components/pwa/install-prompt';
+import { SwUpdatePrompt } from '@/components/pwa/sw-update-prompt';
 import './globals.css';
 
 const geistSans = Geist({
@@ -22,6 +25,15 @@ export const metadata: Metadata = {
   title: 'Peak Tracker UK',
   description:
     'Track your progress across UK hill and mountain lists — Wainwrights, Munros, and more.',
+  themeColor: '#18181b',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Peak Tracker',
+  },
+  icons: {
+    apple: '/icon-192x192.png',
+  },
 };
 
 export default function RootLayout({
@@ -44,6 +56,7 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <QueryProvider>
+              <SyncProvider />
               <NuqsAdapter>
                 <a
                   href="#main-content"
@@ -56,6 +69,8 @@ export default function RootLayout({
                   {children}
                 </main>
                 <Footer />
+                <InstallPrompt />
+                <SwUpdatePrompt />
               </NuqsAdapter>
             </QueryProvider>
           </ThemeProvider>

@@ -1,14 +1,14 @@
-'use client'
+'use client';
 
-import { create } from 'zustand'
+import { create } from 'zustand';
 
 interface SyncState {
-  isSyncing: boolean
-  lastSyncedAt: string | null
-  syncError: string | null
-  setSyncing: (isSyncing: boolean) => void
-  setSyncComplete: (lastSyncedAt: string) => void
-  setSyncError: (error: string) => void
+  isSyncing: boolean;
+  lastSyncedAt: string | null;
+  syncError: string | null;
+  setSyncing: (isSyncing: boolean) => void;
+  setSyncComplete: (lastSyncedAt: string) => void;
+  setSyncError: (error: string) => void;
 }
 
 export const useSyncStore = create<SyncState>()((set) => ({
@@ -18,4 +18,4 @@ export const useSyncStore = create<SyncState>()((set) => ({
   setSyncing: (isSyncing) => set({ isSyncing, syncError: null }),
   setSyncComplete: (lastSyncedAt) => set({ isSyncing: false, lastSyncedAt, syncError: null }),
   setSyncError: (syncError) => set({ isSyncing: false, syncError }),
-}))
+}));

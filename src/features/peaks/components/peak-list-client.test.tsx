@@ -74,15 +74,17 @@ const mockPeaks = [
   },
 ];
 
-function setupDefaults(overrides: {
-  search?: string | null;
-  completion?: string;
-  region?: string | null;
-  sort?: string;
-  dir?: string;
-  pendingCompletions?: Set<string>;
-  pendingRemovals?: Set<string>;
-} = {}) {
+function setupDefaults(
+  overrides: {
+    search?: string | null;
+    completion?: string;
+    region?: string | null;
+    sort?: string;
+    dir?: string;
+    pendingCompletions?: Set<string>;
+    pendingRemovals?: Set<string>;
+  } = {}
+) {
   const {
     search = null,
     completion = 'all',
@@ -102,7 +104,7 @@ function setupDefaults(overrides: {
   });
   mockUseProgressStore.mockImplementation(
     (selector: (s: { pendingCompletions: Set<string>; pendingRemovals: Set<string> }) => unknown) =>
-      selector({ pendingCompletions, pendingRemovals }),
+      selector({ pendingCompletions, pendingRemovals })
   );
 }
 
@@ -195,6 +197,83 @@ describe('PeakListClient', () => {
     expect(items[0]).toHaveTextContent('Helvellyn');
     expect(items[1]).toHaveTextContent('Skiddaw');
     expect(items[2]).toHaveTextContent('Great Gable');
+  });
+
+  it('sorts peaks by heightFeet ascending', () => {
+    setupDefaults({ sort: 'heightFeet', dir: 'asc' });
+    render(<PeakListClient {...defaultProps} />);
+    const items = screen.getAllByRole('listitem');
+    expect(items[0]).toHaveTextContent('Great Gable');
+    expect(items[1]).toHaveTextContent('Skiddaw');
+    expect(items[2]).toHaveTextContent('Helvellyn');
+  });
+
+  it('sorts peaks by region ascending', () => {
+    setupDefaults({ sort: 'region', dir: 'asc' });
+    render(<PeakListClient {...defaultProps} />);
+    const items = screen.getAllByRole('listitem');
+    expect(items[0]).toHaveTextContent('Helvellyn'); // Eastern Fells
+    expect(items[1]).toHaveTextContent('Skiddaw'); // Northern Fells
+    expect(items[2]).toHaveTextContent('Great Gable'); // Southern Fells
+  });
+
+  it('sorts peaks by completion status ascending (incomplete first)', () => {
+    setupDefaults({ sort: 'completion', dir: 'asc' });
+    render(<PeakListClient {...defaultProps} serverCompletedIds={['p1']} />);
+    const items = screen.getAllByRole('listitem');
+    expect(items[0]).not.toHaveTextContent('Skiddaw');
+    expect(items[2]).toHaveTextContent('Skiddaw');
+  });
+
+  it('updates the search filter as the user types', async () => {
+    const user = userEvent.setup();
+    const setSearch = vi.fn();
+    mockUseQueryState.mockReturnValue([null, setSearch]);
+    render(<PeakListClient {...defaultProps} />);
+    await user.type(screen.getByRole('searchbox', { name: /search peaks/i }), 'g');
+    expect(setSearch).toHaveBeenCalledWith('g');
+  });
+
+  it('selecting a completion filter option calls setFilters', async () => {
+    const user = userEvent.setup();
+    const setFilters = vi.fn();
+    mockUseQueryStates.mockImplementation((parsers: Record<string, unknown>) => {
+      if ('completion' in parsers) return [{ completion: 'all', region: null }, setFilters];
+      return [{ sort: 'name', dir: 'asc' }, vi.fn()];
+    });
+    render(<PeakListClient {...defaultProps} />);
+    await user.click(screen.getByRole('combobox', { name: /filter by completion/i }));
+    await user.click(await screen.findByRole('option', { name: 'Completed' }));
+    expect(setFilters).toHaveBeenCalledWith({ completion: 'complete' });
+  });
+
+  it('selecting a region filter option calls setFilters', async () => {
+    const user = userEvent.setup();
+    const setFilters = vi.fn();
+    mockUseQueryStates.mockImplementation((parsers: Record<string, unknown>) => {
+      if ('completion' in parsers) return [{ completion: 'all', region: null }, setFilters];
+      return [{ sort: 'name', dir: 'asc' }, vi.fn()];
+    });
+    render(<PeakListClient {...defaultProps} />);
+    await user.click(screen.getByRole('combobox', { name: /filter by region/i }));
+    await user.click(await screen.findByRole('option', { name: 'Northern Fells' }));
+    expect(setFilters).toHaveBeenCalledWith({ region: 'Northern Fells' });
+  });
+
+  it('selecting a combined sort option calls setSort with field and direction', async () => {
+    const user = userEvent.setup();
+    const setSort = vi.fn();
+    mockUseQueryStates.mockImplementation((parsers: Record<string, unknown>) => {
+      if ('completion' in parsers) return [{ completion: 'all', region: null }, vi.fn()];
+      return [{ sort: 'name', dir: 'asc' }, setSort];
+    });
+    render(<PeakListClient {...defaultProps} />);
+    await user.click(screen.getByRole('combobox', { name: /sort order/i }));
+    const option = await screen.findByRole('option', { name: 'Height (low → high)' });
+    await user.click(option);
+    expect(setSort).toHaveBeenCalledWith(
+      expect.objectContaining({ sort: 'heightMetres', dir: 'asc' })
+    );
   });
 
   it('renders search, completion, region, and combined sort controls', () => {
